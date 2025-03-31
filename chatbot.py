@@ -1,7 +1,6 @@
 import os
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain.vectorstores import Chroma
-# Removed invalid import of Chroma from langchain
 import gradio as gr
 
 # import the .env file
@@ -43,7 +42,6 @@ def stream_response(message, history):
     for doc in docs:
         knowledge += doc.page_content+"\n\n"
 
-
     # make the call to the LLM (including prompt)
     if message is not None:
 
@@ -70,12 +68,14 @@ def stream_response(message, history):
             partial_message += response.content
             yield partial_message
 
+
 # initiate the Gradio app
 chatbot = gr.ChatInterface(stream_response, textbox=gr.Textbox(placeholder="Send to the LLM...",
-    container=False,
-    autoscroll=True,
-    scale=7),
-)
+                                                               container=False,
+                                                               autoscroll=True,
+                                                               scale=7),
+                           )
 
 # launch the Gradio app
-chatbot.launch(share=True, debug=True)
+chatbot.launch(share=True, debug=True, pwa=True) # CRLF (\r\n)
+# End-of-file (EOF)

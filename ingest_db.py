@@ -1,10 +1,11 @@
+import os
+
 from uuid import uuid4
 from langchain_community.vectorstores import Chroma
 from langchain_community.document_loaders import PyPDFDirectoryLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.embeddings.openai import OpenAIEmbeddings
 from dotenv import load_dotenv
-import os
 
 # Load environment variables
 load_dotenv()
@@ -27,13 +28,14 @@ vector_store = Chroma(
 )
 
 # Load the PDF documents
+# https://python.langchain.com/docs/tutorials/retrievers/
 loader = PyPDFDirectoryLoader(DATA_PATH)
 raw_documents = loader.load()
 
 # Split the documents
 text_splitter = RecursiveCharacterTextSplitter(
-    chunk_size=300,
-    chunk_overlap=100,
+    chunk_size=1000,
+    chunk_overlap=200,
     length_function=len,
 )
 
@@ -45,3 +47,6 @@ uuids = [str(uuid4()) for _ in range(len(chunks))]
 
 # Add chunks to the vector store
 vector_store.add_documents(documents=chunks, ids=uuids)
+
+print(f"Generated UUIDs: {uuids}")
+print(f"Number of chunks: {len(chunks)}")
