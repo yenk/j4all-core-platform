@@ -1,0 +1,16 @@
+.venv/
+.env
+.ipynb_checkpoints
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite
+*.log
+*.csv
+*.tsv
+*.json
+
+chromadb.toml
+.gradio/
