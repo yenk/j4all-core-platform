@@ -26,6 +26,6 @@ Use `pyproject.toml` file to install dependencies. You may have to install some 
 
 2. Run `ingest_db.py` once to generate chroma_db vector database for RAG and embedding. This gets invoked in chatbot prompting.
 
-    - `chroma_db` is auto-generated when you run `ingest_db.py` once to provision the chroma_db.
+    * `chroma_db` is auto-generated when you run `ingest_db.py` once to provision the chroma_db.
 
 3. Run `chatboy.py`. This will deploy gradio as our demo app to showcase what the chatbot can do!
