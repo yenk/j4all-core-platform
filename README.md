@@ -1,3 +1,9 @@
+---
+title: justo
+app_file: chatbot.py
+sdk: gradio
+sdk_version: 5.23.1
+---
 # Justice for All Prototyping
 
 Developing a prototype for [Justice for All](https://j4all.org), a pioneering platform to making justice accessible to everyone bu leveraging open-source data.
@@ -19,6 +25,8 @@ Use `pyproject.toml` file to install dependencies. You may have to install some 
 * [OpenAI](https://openai.com/) for embedded text modeling
 
 * [gradio](https://www.gradio.app/) for rag `chatbot` prompting interface
+
+* [huggingface](https://huggingface.co/) for deploying the model live coupled with github action for a CI/CD workflow.
 
 ## Deployment
 

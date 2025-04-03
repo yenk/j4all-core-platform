@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# configuration
+# global configuration
 DATA_PATH = r"data"
 CHROMA_PATH = r"chroma_db"
 
