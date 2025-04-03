@@ -1,5 +1,4 @@
 import os
-
 from uuid import uuid4
 from langchain_community.vectorstores import Chroma
 from langchain_community.document_loaders import PyPDFDirectoryLoader
@@ -10,7 +9,7 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-# Configuration
+# Global configuration
 DATA_PATH = r"data"
 CHROMA_PATH = r"chroma_db"
 
@@ -18,8 +17,6 @@ CHROMA_PATH = r"chroma_db"
 def create_chroma_db() -> Chroma:
     """
     Function to create a Chroma database from PDF files in the specified directory.
-
-    https://python.langchain.com/docs/modules/indexes/vectorstores/integrations/chroma
     """
     # Check if the data path exists
     if not os.path.exists(DATA_PATH):
@@ -35,92 +32,72 @@ def create_chroma_db() -> Chroma:
         raise ValueError("OPENAI_API_KEY is not set in the environment variables.")
 
     # Create the Chroma database for vector store
-    vector_store = Chroma(
-        collection_name="contract_disputes_collection",
-        embedding_function=OpenAIEmbeddings(model="text-embedding-3-large"),
-        persist_directory=CHROMA_PATH,
-    )
-    return vector_store
+    try:
+        vector_store = Chroma(
+            collection_name="contract_disputes_collection",
+            embedding_function=OpenAIEmbeddings(model="text-embedding-3-large"),
+            persist_directory=CHROMA_PATH,
+        )
+        return vector_store
+    except Exception as e:
+        raise RuntimeError(f"Failed to initialize the vector store: {e}") from e
 
 
 def load_and_split_documents() -> list:
     """
-    Function to load and split pdf documents from the specified directory.
-    https://python.langchain.com/docs/tutorials/retrievers/
+    Function to load and split PDF documents from the specified directory.
     """
+    # Load documents from the data path
     loader = PyPDFDirectoryLoader(DATA_PATH)
     raw_documents = loader.load()
-    # Check if the raw documents are empty
+
     if not raw_documents:
-        raise ValueError("No documents found in the specified directory.")
-    # Check if the raw documents are a list
-    if not isinstance(raw_documents, list):
-        raise TypeError("The loaded documents are not in the expected format.")
+        raise ValueError("No documents were found in the specified data path.")
 
-    # Split the documents
-    splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-    chunks = splitter.split_documents(raw_documents)
-    return chunks if chunks else []
+    # Split the documents into chunks
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=300, chunk_overlap=100)
+    chunks = text_splitter.split_documents(raw_documents)
 
+    if not chunks:
+        raise ValueError("Failed to split documents into chunks.")
 
-def create_chunks(text_splitter, raw_documents) -> list:
-    """
-    Function to create chunks from the loaded documents.
-    """
-    # Check if the text splitter is initialized
-    if text_splitter is None:
-        raise ValueError("Text splitter is not initialized.")
-    # Check if the raw documents are loaded
-    if raw_documents is None:
-        raise ValueError("Raw documents are not loaded.")
-    # Create the chunks
-    return text_splitter.split_documents(raw_documents)
+    return chunks
 
 
-def add_chunks_to_vector_store(vector_store, chunks, uuids):
+def add_chunks_to_vector_store(store: Chroma, chunks: list):
     """
     Function to add chunks to the vector store.
     """
     # Check if the vector store is initialized
     if vector_store is None:
         raise ValueError("Vector store is not initialized.")
+
     # Check if the chunks are loaded
-    if chunks is None:
+    if not chunks:
         raise ValueError("Chunks are not loaded.")
-    # Check if the UUIDs are loaded
-    if uuids is None:
-        raise ValueError("UUIDs are not loaded.")
+
+    # Generate unique IDs for each chunk
+    uuids = [str(uuid4()) for _ in range(len(chunks))]
+
+    # Add chunks to the vector store
     vector_store.add_documents(documents=chunks, ids=uuids)
+    # print(f"Added {len(chunks)} chunks to the vector store.")
 
 
 # Main function to run the script
 if __name__ == "__main__":
-    # Load and split documents
-    raw_documents = load_and_split_documents()
-    if not raw_documents:
-        raise ValueError("No documents were loaded.")
-
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-    document_chunks = create_chunks(
-        text_splitter, raw_documents
-    )  # Renamed from 'chunks'
-    if not document_chunks:
-        raise ValueError("Failed to create chunks from the documents.")
-
-    # Create unique IDs for the chunks
-    uuids = [str(uuid4()) for _ in range(len(document_chunks))]
-
-    # Initialize the vector store
     try:
+        # Load and split documents
+        document_chunks = load_and_split_documents()
+        # Initialize the vector store
         vector_store = create_chroma_db()
+        # Add chunks to the vector store
+        add_chunks_to_vector_store(store=vector_store, chunks=document_chunks)
+
+        # Print the results
+        print(
+            f"Successfully processed and added {len(document_chunks)} chunks to the vector store."
+        )
+
     except Exception as e:
-        raise RuntimeError(f"Failed to initialize the vector store: {e}")
-
-    # Add chunks to the vector store
-    add_chunks_to_vector_store(vector_store, document_chunks, uuids)
-
-    # Print the results
-    print(f"Loaded {len(raw_documents)} documents.")
-    print(f"Created {len(document_chunks)} chunks.")
-    print(f"Created {len(uuids)} unique IDs.")
-    print(f"Vector store created: {vector_store}")
+        print(f"An error occurred: {e}")
