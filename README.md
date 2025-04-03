@@ -28,4 +28,4 @@ Use `pyproject.toml` file to install dependencies. You may have to install some 
 
     * `chroma_db` is auto-generated when you run `ingest_db.py` once to provision the chroma_db.
 
-3. Run `chatboy.py`. This will deploy gradio as our demo app to showcase what the chatbot can do!
+3. Run `chatbot.py`. This will deploy gradio as our demo app to showcase what the chatbot can do!
