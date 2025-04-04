@@ -1,10 +1,20 @@
 import os
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
-from langchain.vectorstores import Chroma
-import gradio as gr
-
+import sys
 
 from dotenv import load_dotenv
+
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain.vectorstores import Chroma
+
+import gradio as gr
+
+from pipeline import ingest
+
+# Add the src directory to the system path
+# This allows us to import modules from the src directory
+# without needing to specify the full path
+# src_path = os.path.abspath('src')
+# sys.path.insert(0, src_path)
 
 load_dotenv()
 
@@ -32,11 +42,12 @@ def connect_chroma_db() -> Chroma:
     """
     Function to connect to the chroma database.
     """
-    vector_store = Chroma(
-        collection_name="contract_disputes_collection",
-        embedding_function=OpenAIEmbeddings(model="text-embedding-3-large"),
-        persist_directory=CHROMA_PATH,
-    )
+    vector_store = ingest.create_chroma_db()
+    # vector_store = Chroma(
+    #     collection_name="contract_disputes_collection",
+    #     embedding_function=OpenAIEmbeddings(model="text-embedding-3-large"),
+    #     persist_directory=CHROMA_PATH,
+    # )
     return vector_store
 
 
@@ -69,10 +80,8 @@ def stream_response_from_retriever(message, history):
         partial_message = ""
         # create the prompt for the LLM
         rag_prompt = f"""
-        You are an assistent which answers questions based on knowledge which is provided to you.
-        While answering, you don't use your internal knowledge, 
-        but solely the information in the "The knowledge" section.
-        You don't mention anything to the user about the provided knowledge.
+        You are an assistant that provides answers based solely on the information provided to you, 
+        without relying on internal knowledge or external sources.
         
         The question: {message}
         Conversation history: {history}
