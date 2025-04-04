@@ -1,5 +1,4 @@
 import os
-import sys
 
 from dotenv import load_dotenv
 
@@ -10,12 +9,7 @@ import gradio as gr
 
 from pipeline import ingest
 
-# Add the src directory to the system path
-# This allows us to import modules from the src directory
-# without needing to specify the full path
-# src_path = os.path.abspath('src')
-# sys.path.insert(0, src_path)
-
+# Load environment variables from .env file
 load_dotenv()
 
 # global configuration

@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
+
 # Global configuration
 DATA_PATH = r"data"
 CHROMA_PATH = r"chroma_db"
