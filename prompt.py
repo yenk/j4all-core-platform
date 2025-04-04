@@ -37,11 +37,6 @@ def connect_chroma_db() -> Chroma:
     Function to connect to the chroma database.
     """
     vector_store = ingest.create_chroma_db()
-    # vector_store = Chroma(
-    #     collection_name="contract_disputes_collection",
-    #     embedding_function=OpenAIEmbeddings(model="text-embedding-3-large"),
-    #     persist_directory=CHROMA_PATH,
-    # )
     return vector_store
 
 
@@ -58,8 +53,6 @@ def stream_response_from_retriever(message, history):
     """
     Function to stream the response from the LLM RAG. This function is called by the Gradio app.
     """
-    # print(f"Input: {message}. History: {history}\n")
-
     # retrieve the relevant chunks based on the question asked
     retriever = create_vector_store_for_retriever()
     docs = retriever.get_relevant_documents(message)
