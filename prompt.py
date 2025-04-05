@@ -1,11 +1,15 @@
 import os
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
-from langchain.vectorstores import Chroma
-import gradio as gr
-
 
 from dotenv import load_dotenv
 
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain.vectorstores import Chroma
+
+import gradio as gr
+
+from pipeline import ingest
+
+# Load environment variables from .env file
 load_dotenv()
 
 # global configuration
@@ -32,11 +36,7 @@ def connect_chroma_db() -> Chroma:
     """
     Function to connect to the chroma database.
     """
-    vector_store = Chroma(
-        collection_name="contract_disputes_collection",
-        embedding_function=OpenAIEmbeddings(model="text-embedding-3-large"),
-        persist_directory=CHROMA_PATH,
-    )
+    vector_store = ingest.create_chroma_db()
     return vector_store
 
 
@@ -53,8 +53,6 @@ def stream_response_from_retriever(message, history):
     """
     Function to stream the response from the LLM RAG. This function is called by the Gradio app.
     """
-    # print(f"Input: {message}. History: {history}\n")
-
     # retrieve the relevant chunks based on the question asked
     retriever = create_vector_store_for_retriever()
     docs = retriever.get_relevant_documents(message)
@@ -69,10 +67,8 @@ def stream_response_from_retriever(message, history):
         partial_message = ""
         # create the prompt for the LLM
         rag_prompt = f"""
-        You are an assistent which answers questions based on knowledge which is provided to you.
-        While answering, you don't use your internal knowledge, 
-        but solely the information in the "The knowledge" section.
-        You don't mention anything to the user about the provided knowledge.
+        You are an assistant that provides answers based solely on the information provided to you, 
+        without relying on internal knowledge or external sources.
         
         The question: {message}
         Conversation history: {history}
@@ -89,17 +85,20 @@ def stream_response_from_retriever(message, history):
 
 def run_chatbot():
     """
-    Function to run the chatbot.
+    Function to run the chatbot and deploy to hugging face "lumi" space.
     """
-    # create the Gradio app
-    gr.ChatInterface(fn=stream_response_from_retriever, textbox=gr.Textbox(placeholder="Send to the LLM...",
-    container=False,
-    autoscroll=True,
-    scale=7,
-    label="Ask me anything about contract disputes"),
-    title="Welcome to Justice for All - Your AI Assistant, a contract dispute resolution prototype. Note: My responses should not be considered legal advice.",
+    # deploy to gradio app
+    gr.ChatInterface(
+        fn=stream_response_from_retriever,
+        textbox=gr.Textbox(
+            placeholder="Send to the LLM...",
+            container=False,
+            autoscroll=True,
+            scale=7,
+            show_label=False
+        ),
+        title="Hi, I'm Lumi! I'm an AI-powered tool designed to assist with Justice for All inquiries. I'm a prototype, and my owner is working to bring me to life!",
     ).launch(share=True, debug=True, pwa=True)
-
 
 if __name__ == "__main__":
     run_chatbot()
