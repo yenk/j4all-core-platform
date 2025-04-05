@@ -85,17 +85,20 @@ def stream_response_from_retriever(message, history):
 
 def run_chatbot():
     """
-    Function to run the chatbot.
+    Function to run the chatbot and deploy to hugging face "lumi" space.
     """
-    # create the Gradio app
-    gr.ChatInterface(fn=stream_response_from_retriever, textbox=gr.Textbox(placeholder="Send to the LLM...",
-    container=False,
-    autoscroll=True,
-    scale=7,
-    label="Ask me anything about contract disputes"),
-    title="Welcome to Justice for All - Your AI Assistant, a contract dispute resolution prototype. Note: My responses should not be considered legal advice.",
+    # deploy to gradio app
+    gr.ChatInterface(
+        fn=stream_response_from_retriever,
+        textbox=gr.Textbox(
+            placeholder="Send to the LLM...",
+            container=False,
+            autoscroll=True,
+            scale=7,
+            # label="Hi, I'm Lumi! I'm an AI-powered tool designed to assist with Justice for All inquiries. I'm a prototype, and my owner is working to bring me to life!",
+        ),
+        title="Hi, I'm Lumi! I'm an AI-powered tool designed to assist with Justice for All inquiries. I'm a prototype, and my owner is working to bring me to life!",
     ).launch(share=True, debug=True, pwa=True)
-
 
 if __name__ == "__main__":
     run_chatbot()
