@@ -95,7 +95,7 @@ def run_chatbot():
             container=False,
             autoscroll=True,
             scale=7,
-            # label="Hi, I'm Lumi! I'm an AI-powered tool designed to assist with Justice for All inquiries. I'm a prototype, and my owner is working to bring me to life!",
+            show_label=False
         ),
         title="Hi, I'm Lumi! I'm an AI-powered tool designed to assist with Justice for All inquiries. I'm a prototype, and my owner is working to bring me to life!",
     ).launch(share=True, debug=True, pwa=True)
