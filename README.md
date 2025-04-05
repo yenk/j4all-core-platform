@@ -1,6 +1,6 @@
 ---
-title: justo
-app_file: chatbot.py
+title: Lumi
+app_file: prompt.py
 sdk: gradio
 sdk_version: 5.23.1
 ---
