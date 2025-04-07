@@ -12,10 +12,9 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-
 # Global configuration
-DATA_PATH = r"data"
-CHROMA_PATH = r"chroma_db"
+DATA_PATH = os.path.join(os.path.dirname(__file__), "../data")
+CHROMA_PATH = os.path.join(os.path.dirname(__file__), "../chroma_db")
 
 
 def create_chroma_db() -> Chroma:
