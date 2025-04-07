@@ -17,6 +17,16 @@ DATA_PATH = os.path.join(os.path.dirname(__file__), "../data")
 CHROMA_PATH = os.path.join(os.path.dirname(__file__), "../chroma_db")
 
 
+def get_openai_api_key() -> str:
+    """
+    Retrieves the OpenAI API key from environment variables.
+    """
+    openai_api_key = os.getenv("OPENAI_API_KEY")
+    if not openai_api_key:
+        raise ValueError("OPENAI_API_KEY is not set in the environment variables.")
+    return openai_api_key
+
+
 def create_chroma_db() -> Chroma:
     """
     Function to create a Chroma database from PDF files in the specified directory.
@@ -29,8 +39,8 @@ def create_chroma_db() -> Chroma:
     if not os.path.exists(CHROMA_PATH):
         os.makedirs(CHROMA_PATH)
 
-    # Check if the OpenAI API key is set
-    openai_api_key = os.getenv("OPENAI_API_KEY")
+   # Retrieve the OpenAI API key
+    openai_api_key = get_openai_api_key()
     if not openai_api_key:
         raise ValueError("OPENAI_API_KEY is not set in the environment variables.")
 
