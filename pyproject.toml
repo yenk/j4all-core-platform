@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "lumi"
+name = "lumilens"
 version = "0.1.0"
-description = ""
+description = "A project for lensing data"
 authors = ["Yen <ykrunner@gmail.com>"]
 readme = "README.md"
 
