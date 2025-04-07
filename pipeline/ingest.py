@@ -39,16 +39,11 @@ def create_chroma_db() -> Chroma:
     if not os.path.exists(CHROMA_PATH):
         os.makedirs(CHROMA_PATH)
 
-    # Retrieve the OpenAI API key
-    openai_api_key = get_openai_api_key()
-    if not openai_api_key:
-        raise ValueError("OPENAI_API_KEY is not set in the environment variables.")
-
     # Create the Chroma database for vector store
     try:
         vector_store = Chroma(
             collection_name="contract_disputes_collection",
-            embedding_function=OpenAIEmbeddings(model="text-embedding-3-large"),
+            embedding_function=OpenAIEmbeddings(model="text-embedding-3-large", api_key=get_openai_api_key()),
             persist_directory=CHROMA_PATH,
         )
         return vector_store
