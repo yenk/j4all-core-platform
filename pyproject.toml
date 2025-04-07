@@ -22,5 +22,3 @@ dotenv = "^0.9.9"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
-
-# Dependencies are already listed under [tool.poetry.dependencies], so this section is removed.
