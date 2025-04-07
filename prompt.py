@@ -22,13 +22,12 @@ def create_llm() -> ChatOpenAI:
     Function to initiate the model.
     """
     # Check if the OpenAI API key is set
-    openai_api_key = os.getenv("OPENAI_API_KEY")
-
+    openai_api_key = ingest.get_openai_api_key()
     if not openai_api_key:
         raise ValueError("OPENAI_API_KEY is not set in the environment variables.")
 
     # Initialize and return the model
-    model = ChatOpenAI(temperature=0.5, model="gpt-4o-mini")
+    model = ChatOpenAI(temperature=0.5, model="gpt-4o-mini", api_key=openai_api_key)
     return model
 
 
