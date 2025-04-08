@@ -2,6 +2,7 @@ import os
 
 from dotenv import load_dotenv
 
+
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain.vectorstores import Chroma
 
@@ -95,6 +96,8 @@ def run_chatbot():
             autoscroll=True,
             scale=7,
             show_label=False,
+            theme="compact",
+            
         ),
         title="Hi, I'm LumiLens! I'm an AI-powered tool designed to assist with Justice for All inquiries. I'm a prototype, and my owner is working to bring me to life!",
     ).launch(share=True, debug=True, pwa=True)
