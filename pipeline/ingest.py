@@ -17,6 +17,18 @@ DATA_PATH = os.path.join(os.path.dirname(__file__), "../data")
 CHROMA_PATH = os.path.join(os.path.dirname(__file__), "../chroma_db")
 
 
+def is_running_in_spaces() -> bool:
+    return "SPACE_ID" in os.environ
+
+# Only import and load dotenv locally
+if not is_running_in_spaces():
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()
+    except ModuleNotFoundError:
+        print("Warning: python-dotenv not installed. Skipping local .env loading.")
+
+
 def get_openai_api_key() -> str:
     openai_api_key = os.getenv("OPENAI_API_KEY")
     if not openai_api_key:
