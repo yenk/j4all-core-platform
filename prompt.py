@@ -64,7 +64,7 @@ def stream_response_from_retriever(message, history):
     Stream a response using LLM and retrieved legal context.
     """
     retriever = create_retriever()
-    docs = retriever.get_relevant_documents(message)
+    docs = retriever.invoke(message)  # ✅ Updated method call
     knowledge = "\n\n".join(doc.page_content for doc in docs)
 
     if not message:
@@ -103,7 +103,7 @@ def run_chatbot():
             show_label=False,
         ),
         title="Hi, I'm LumiLens! I'm an AI-powered tool designed to assist with Justice for All inquiries. I'm a prototype, and my owner is working to bring me to life!",
-        theme="default",
+        theme="default", # 👈 Use light theme
     ).launch(share=True, debug=True, pwa=True)
 
 
