@@ -18,9 +18,6 @@ CHROMA_PATH = os.path.join(os.path.dirname(__file__), "../chroma_db")
 
 
 def get_openai_api_key() -> str:
-    """
-    Retrieves the OpenAI API key from environment variables.
-    """
     openai_api_key = os.getenv("OPENAI_API_KEY")
     if not openai_api_key:
         raise ValueError("OPENAI_API_KEY is not set in the environment variables.")
@@ -29,24 +26,26 @@ def get_openai_api_key() -> str:
 
 def create_chroma_db() -> Chroma:
     """
-    Function to create a Chroma database from PDF files in the specified directory.
+    Creates and returns a Chroma vector store using OpenAI embeddings.
     """
-    # Check if the data path exists
     if not os.path.exists(DATA_PATH):
         raise FileNotFoundError(f"The specified data path does not exist: {DATA_PATH}")
-
-    # Check if the chroma path exists
     if not os.path.exists(CHROMA_PATH):
         os.makedirs(CHROMA_PATH)
 
-    # Create the Chroma database for vector store
     try:
+        api_key = get_openai_api_key()
+        embedding_function = OpenAIEmbeddings(
+            model="text-embedding-3-large", api_key=api_key
+        )
+
         vector_store = Chroma(
             collection_name="contract_disputes_collection",
-            embedding_function=OpenAIEmbeddings(model="text-embedding-3-large", api_key=get_openai_api_key()),
+            embedding_function=embedding_function,
             persist_directory=CHROMA_PATH,
         )
         return vector_store
+
     except Exception as e:
         raise RuntimeError(f"Failed to initialize the vector store: {e}") from e
 
@@ -89,7 +88,7 @@ def add_chunks_to_vector_store(store: Chroma, chunks: list):
 
     # Add chunks to the vector store
     vector_store.add_documents(documents=chunks, ids=uuids)
-    # print(f"Added {len(chunks)} chunks to the vector store.")
+    print(f"Added {len(chunks)} chunks to the vector store.")
 
 
 # Main function to run the script
@@ -97,12 +96,11 @@ if __name__ == "__main__":
     try:
         # Load and split documents
         document_chunks = load_and_split_documents()
-        # Initialize the vector store
+        # # Initialize the vector store
         vector_store = create_chroma_db()
-        # Add chunks to the vector store
+        # # Add chunks to the vector store
         add_chunks_to_vector_store(store=vector_store, chunks=document_chunks)
-
-        # Print the results
+        # # Print the results
         print(
             f"Successfully processed and added {len(document_chunks)} chunks to the vector store."
         )
