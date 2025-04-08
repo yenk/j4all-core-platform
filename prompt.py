@@ -1,93 +1,98 @@
 import os
-
 from dotenv import load_dotenv
-
 
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain.vectorstores import Chroma
+from langchain.prompts import PromptTemplate
+from langchain.chains import RetrievalQA
 
 import gradio as gr
-
 from pipeline import ingest
 
-# Load environment variables from .env file
+# Load environment variables
 load_dotenv()
 
-# global configuration
-DATA_PATH = r"data"
-CHROMA_PATH = r"chroma_db"
+# Constants
+DATA_PATH = "data"
+CHROMA_PATH = "chroma_db"
+
+LEGAL_PROMPT_TEMPLATE = """
+You are a legal assistant specialized in contract law and appellate matters. Use the context provided below, which may include excerpts from contracts, case law, or legal analysis, to answer the legal question. Be precise and grounded in the facts presented. Do not make up information. If the answer is not in the context, say:
+
+"I cannot provide a legal answer based on the provided context."
+
+---
+
+Context:
+{context}
+
+---
+
+Legal Question:
+{question}
+
+Legal Answer:
+"""
+
+# Reusable prompt object
+prompt = PromptTemplate(
+    input_variables=["context", "question"],
+    template=LEGAL_PROMPT_TEMPLATE,
+)
 
 
 def create_llm() -> ChatOpenAI:
     """
-    Function to initiate the model.
+    Initialize the OpenAI model (gpt-4o-mini).
     """
-    # Check if the OpenAI API key is set
     openai_api_key = ingest.get_openai_api_key()
     if not openai_api_key:
-        raise ValueError("OPENAI_API_KEY is not set in the environment variables.")
-
-    # Initialize and return the model
-    model = ChatOpenAI(temperature=0.5, model="gpt-4o-mini", api_key=openai_api_key)
-    return model
+        raise ValueError("OPENAI_API_KEY is not set.")
+    return ChatOpenAI(temperature=0.0, model="gpt-4o-mini", api_key=openai_api_key)
 
 
-def connect_chroma_db() -> Chroma:
+def create_retriever(k: int = 5):
     """
-    Function to connect to the chroma database.
+    Create the retriever from Chroma vector store.
     """
     vector_store = ingest.create_chroma_db()
-    return vector_store
-
-
-def create_vector_store_for_retriever() -> Chroma:
-    """
-    Function to create the vector store for the retriever.
-    """
-    num_results = 5
-    retriever = connect_chroma_db().as_retriever(search_kwargs={"k": num_results})
-    return retriever
+    return vector_store.as_retriever(search_kwargs={"k": k})
 
 
 def stream_response_from_retriever(message, history):
     """
-    Function to stream the response from the LLM RAG. This function is called by the Gradio app.
+    Stream a response using LLM and retrieved legal context.
     """
-    # retrieve the relevant chunks based on the question asked
-    retriever = create_vector_store_for_retriever()
+    retriever = create_retriever()
     docs = retriever.get_relevant_documents(message)
+    knowledge = "\n\n".join(doc.page_content for doc in docs)
 
-    # add all the chunks to 'knowledge'
-    knowledge = ""
-    for doc in docs:
-        knowledge += doc.page_content + "\n\n"
+    if not message:
+        return
 
-    # invoke the LLM call including prompt
-    if message is not None:
-        partial_message = ""
-        # create the prompt for the LLM
-        rag_prompt = f"""
-        You are an assistant that provides answers based solely on the information provided to you, 
-        without relying on internal knowledge or external sources.
-        
-        The question: {message}
-        Conversation history: {history}
-        The knowledge: {knowledge}
-        """
-        print(rag_prompt)
+    llm = create_llm()
+    partial_message = ""
 
-        # stream the response to the Gradio App
-        llm = create_llm()
-        for response in llm.stream(rag_prompt):
-            partial_message += response.content
-            yield partial_message
+    # Create full RAG-style input prompt
+    rag_prompt = f"""
+    You are a legal assistant specialized in contract law and appellate matters.
+    Use the context provided below, which may include excerpts from contracts, case law, or legal analysis,
+    to answer the legal question. Be precise and grounded in the facts presented.
+
+    Question: {message}
+    Context: {knowledge}
+    """
+
+    # Stream output token by token
+    for response in llm.stream(rag_prompt):
+        partial_message += response.content
+        yield partial_message
 
 
 def run_chatbot():
     """
-    Function to run the chatbot and deploy to hugging face "lumi" space.
+    Run the LumiLens chatbot with Gradio UI.
     """
-    # deploy to gradio app
     gr.ChatInterface(
         fn=stream_response_from_retriever,
         textbox=gr.Textbox(
@@ -96,12 +101,12 @@ def run_chatbot():
             autoscroll=True,
             scale=7,
             show_label=False,
-            # theme="compact",
-            
         ),
         title="Hi, I'm LumiLens! I'm an AI-powered tool designed to assist with Justice for All inquiries. I'm a prototype, and my owner is working to bring me to life!",
+        theme="default",
     ).launch(share=True, debug=True, pwa=True)
 
 
 if __name__ == "__main__":
     run_chatbot()
+    

@@ -2,6 +2,8 @@ import os
 from dotenv import load_dotenv
 import torch
 from transformers import BertTokenizer, BertForSequenceClassification
+from transformers import AutoModel, AutoTokenizer, init_empty_weights
+
 from langchain.vectorstores import Chroma
 import gradio as gr
 from pipeline import ingest

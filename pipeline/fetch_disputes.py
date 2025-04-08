@@ -1,10 +1,10 @@
 import os
 import requests
-from bs4 import BeautifulSoup
 from urllib.parse import urljoin
+from bs4 import BeautifulSoup
 
 # Set the base URL of the site with the decisions
-BASE_URL = "https://www.cbca.gov/decisions/cda-cases.html"  # Replace with the actual URL
+BASE_URL = "https://www.cbca.gov/decisions/cda-cases.html"
 
 # Years to scrape
 YEARS = ["2025", "2024", "2023", "2022", "2021"]

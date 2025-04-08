@@ -4,8 +4,8 @@
 
 import os
 import requests
-from bs4 import BeautifulSoup
 from urllib.parse import urljoin
+from bs4 import BeautifulSoup
 
 BASE_URL = "https://www.cbca.gov/decisions/cda-cases.html"
 YEARS = ["2025", "2024", "2023", "2022", "2021"]
