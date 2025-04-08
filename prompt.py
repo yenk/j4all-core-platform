@@ -96,7 +96,7 @@ def run_chatbot():
             autoscroll=True,
             scale=7,
             show_label=False,
-            theme="compact",
+            # theme="compact",
             
         ),
         title="Hi, I'm LumiLens! I'm an AI-powered tool designed to assist with Justice for All inquiries. I'm a prototype, and my owner is working to bring me to life!",
