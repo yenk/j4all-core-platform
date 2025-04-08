@@ -16,3 +16,4 @@ chromadb.toml
 .gradio/
 
 tmp/
+dev/
