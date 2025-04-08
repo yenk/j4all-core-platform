@@ -104,7 +104,7 @@ def run_chatbot():
             scale=7,
             show_label=False,
         ),
-        title="Hi, I'm LumiLens! I'm an AI-powered tool designed to assist with Justice for All ontract law and appellate matters. I'm a prototype, and my owner is working to bring me to life!",
+        title="Hi, I'm LumiLens! I'm an AI-powered tool designed to assist with Justice for All contract law and appellate matters. I'm a prototype, and my owner is working to bring me to life!",
         theme="default", # 👈 Use light theme
     ).launch(share=True, debug=True, pwa=True)
 
