@@ -28,6 +28,11 @@ htmlcov/
 # Generated files
 requirements.txt
 
+# Data and Database - Not tracked in Git
+# These should be downloaded on app startup from a release asset
+data/
+chroma_db/
+
 tmp/
 dev/
 

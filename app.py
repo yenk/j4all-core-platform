@@ -1,6 +1,9 @@
 import streamlit as st
 import os
 from pathlib import Path
+import requests
+import zipfile
+import io
 
 # Page configuration
 st.set_page_config(
@@ -34,7 +37,43 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# --- Helper Function to Download and Unzip Data ---
+# This function will run once and cache the result for efficiency
+@st.cache_resource
+def download_and_unzip_data():
+    # IMPORTANT: Replace this with the actual URL to your data.zip from GitHub Releases
+    release_url = "https://github.com/yenk/j4all-core-platform/releases/download/v1.0-data/data.zip"
+    
+    data_dir = Path("data")
+    db_dir = Path("chroma_db")
+
+    # Only download if the directories don't exist
+    if not data_dir.exists() or not db_dir.exists():
+        st.info(f"Downloading data from {release_url}...")
+        try:
+            response = requests.get(release_url, stream=True)
+            response.raise_for_status() # Raise an exception for bad status codes
+
+            with st.spinner("Unzipping data... This may take a moment."):
+                with zipfile.ZipFile(io.BytesIO(response.content)) as z:
+                    z.extractall(".")
+            st.success("✅ Data and database downloaded and set up successfully!")
+        except requests.exceptions.RequestException as e:
+            st.error(f"Error downloading data: {e}")
+            st.error("Please make sure the release URL is correct and the asset is public.")
+            return False
+        except zipfile.BadZipFile:
+            st.error("Error: Downloaded file is not a valid zip archive.")
+            return False
+    else:
+        st.info("Data directories already exist. Skipping download.")
+    return True
+
 def main():
+    # Run the data download function at the start of the app
+    if not download_and_unzip_data():
+        st.stop() # Stop the app if data download fails
+
     # Header
     st.markdown('<h1 class="main-header">📄 LumiLens</h1>', unsafe_allow_html=True)
     st.markdown('<p style="text-align: center; font-size: 1.2rem; color: #666;">Legal Document Analysis & AI Assistant</p>', unsafe_allow_html=True)
