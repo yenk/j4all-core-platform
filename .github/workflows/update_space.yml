@@ -41,8 +41,16 @@ jobs:
       if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
       run: poetry install --no-interaction --no-root
 
-    - name: Install Streamlit
-      run: poetry add streamlit
+    - name: Generate requirements.txt
+      run: |
+        source .venv/bin/activate
+        pip freeze > requirements.txt
+
+    - name: Validate dependencies
+      run: |
+        echo "📦 Checking dependencies..."
+        source .venv/bin/activate
+        python -c "import streamlit, langchain, chromadb, transformers, torch; print('✅ All core dependencies imported successfully')"
 
     - name: Run tests (if any)
       run: |
@@ -81,19 +89,17 @@ jobs:
     - name: Install dependencies
       run: poetry install --no-interaction --no-root
 
-    - name: Install Streamlit
-      run: poetry add streamlit
-
-    - name: Create requirements.txt for Streamlit Cloud
+    - name: Generate requirements.txt for Streamlit Cloud
       run: |
-        poetry export -f requirements.txt --output requirements.txt --without-hashes
-        echo "streamlit" >> requirements.txt
+        source .venv/bin/activate
+        pip freeze > requirements.txt
 
     - name: Validate Streamlit app
       run: |
         # Check if app.py exists and is valid
         if [ -f "app.py" ]; then
           echo "✅ app.py found"
+          source .venv/bin/activate
           python -c "import streamlit; print('✅ Streamlit import successful')"
         else
           echo "⚠️  app.py not found - create this file for Streamlit Cloud deployment"

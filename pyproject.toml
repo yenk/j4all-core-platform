@@ -7,19 +7,30 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.12"
-langchain-community = "^0.3.20"
+
+# Core LangChain dependencies
 langchain = "^0.3.21"
-langchain-text-splitters = "^0.3.7"
+langchain-community = "^0.3.20"
 langchain-openai = "^0.3.11"
-# python-dotenv = "^1.1.0"
+langchain-text-splitters = "^0.3.7"
+
+# Web framework
 streamlit = "^1.32.0"
+
+# Document processing
 pypdf = "^5.4.0"
-huggingface-hub = "^0.30.1"
 beautifulsoup4 = "^4.13.3"
-requests = "^2.32.3"
+
+# AI/ML dependencies
+huggingface-hub = "^0.30.1"
+chromadb = "^1.0.0"
+transformers = "^4.52.0"
+torch = "^2.0.0"
 tiktoken = "^0.9.0"
 
-
+# HTTP and utilities
+requests = "^2.32.3"
+python-dotenv = "^1.1.0"
 
 [build-system]
 requires = ["poetry-core"]

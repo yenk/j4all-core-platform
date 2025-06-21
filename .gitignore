@@ -25,6 +25,9 @@ chromadb.toml
 .coverage
 htmlcov/
 
+# Generated files
+requirements.txt
+
 tmp/
 dev/
 
