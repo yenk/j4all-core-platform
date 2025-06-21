@@ -3,15 +3,12 @@ langchain-openai==0.3.11
 langchain-community==0.3.20
 langchain==0.3.21
 langchain-text-splitters==0.3.7
-langchain-openai==0.3.11
-# python-dotenv==1.1.0  # Optional: only needed for local .env support
-gradio==5.23.1
+streamlit==1.32.0
 pypdf==5.4.0
 huggingface-hub==0.30.1
 chromadb==1.0.0
-beautifulsoup4 ==4.13.3
-requests ==2.32.3
+beautifulsoup4==4.13.3
+requests==2.32.3
 tiktoken==0.9.0
-transformers==4.19.2
-torch==1.12.1
-python-dotenv==0.21.0
+transformers
+torch>=2.0.0
