@@ -1,5 +1,6 @@
 .venv/
 .env
+venv/
 .ipynb_checkpoints
 __pycache__/
 *.pyc
@@ -7,13 +8,26 @@ __pycache__/
 *.pyd
 *.db
 *.sqlite
+*.sqlite3
+app.db
 *.log
 *.csv
 *.tsv
 *.json
 
 chromadb.toml
-.gradio/
+#.gradio/  # (Uncomment if you want to keep ignoring old Gradio files)
+
+.streamlit/
+.DS_Store
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Generated files
+requirements.txt
 
 tmp/
 dev/
+
