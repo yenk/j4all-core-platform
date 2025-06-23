@@ -1,6 +1,9 @@
 import streamlit as st
 import os
 from pathlib import Path
+import requests
+import zipfile
+import io
 
 # Page configuration
 st.set_page_config(
@@ -34,7 +37,33 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+def download_and_unzip_data():
+    """
+    Download and extract data.zip from GitHub Releases if data/ or chroma_db/ do not exist.
+    """
+    release_url = "https://github.com/yenk/j4all-core-platform/releases/download/v1.0.0/data.zip"  # Update if your tag or asset name changes
+    data_dir = Path("data")
+    db_dir = Path("chroma_db")
+    if not data_dir.exists() or not db_dir.exists():
+        print(f"Downloading data from {release_url}...")
+        try:
+            response = requests.get(release_url, stream=True)
+            response.raise_for_status()
+            with zipfile.ZipFile(io.BytesIO(response.content)) as z:
+                z.extractall(".")
+            print("✅ Data and database downloaded and set up successfully!")
+        except Exception as e:
+            print(f"Error downloading or extracting data: {e}")
+            raise
+    else:
+        print("Data directories already exist. Skipping download.")
+
 def main():
+    """
+    Main function to run the Streamlit app.
+    """
+    # Download and extract data.zip if needed
+    download_and_unzip_data()
     # Header
     st.markdown('<h1 class="main-header">📄 LumiLens</h1>', unsafe_allow_html=True)
     st.markdown('<p style="text-align: center; font-size: 1.2rem; color: #666;">Legal Document Analysis & AI Assistant</p>', unsafe_allow_html=True)
