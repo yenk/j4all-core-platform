@@ -41,7 +41,7 @@ def download_and_unzip_data():
     """
     Download and extract data.zip from GitHub Releases if data/ or chroma_db/ do not exist.
     """
-    release_url = "https://github.com/yenk/j4all-core-platform/releases/download/v1.0.0/data.zip"  # Update if your tag or asset name changes
+    release_url = "https://github.com/user-attachments/files/20872836/data.zip"  # Update if your tag or asset name changes
     data_dir = Path("data")
     db_dir = Path("chroma_db")
     if not data_dir.exists() or not db_dir.exists():
@@ -53,15 +53,14 @@ def download_and_unzip_data():
                 z.extractall(".")
             print("✅ Data and database downloaded and set up successfully!")
         except Exception as e:
-            print(f"Error downloading or extracting data: {e}")
+            print(f"Status code: {response.status_code}")
+            print(f"Response content: {response.content[:200]}")
             raise
     else:
         print("Data directories already exist. Skipping download.")
 
 def main():
-    """
-    Main function to run the Streamlit app.
-    """
+    """"""
     # Download and extract data.zip if needed
     download_and_unzip_data()
     # Header
