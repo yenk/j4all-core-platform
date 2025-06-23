@@ -14,6 +14,13 @@ app.db
 *.csv
 *.tsv
 *.json
+*.zip
+*.pdf
+*.docx
+*.doc
+*.txt
+*.html
+*.css
 
 chromadb.toml
 #.gradio/  # (Uncomment if you want to keep ignoring old Gradio files)
