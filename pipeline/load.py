@@ -8,7 +8,9 @@ from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 
 BASE_URL = "https://www.cbca.gov/decisions/cda-cases.html"
-YEARS = ["2025", "2024", "2023", "2022", "2021"]
+start_year = 2025
+end_year = 2025
+YEARS = [str(year) for year in range(start_year, end_year + 1)]
 
 # Root data directory
 DATA_PATH = os.path.join(os.path.dirname(__file__), "../data")
@@ -30,24 +32,35 @@ def find_year_section(soup, year):
     return None
 
 
-def extract_pdf_links(section):
-    """Extract all PDF links from a given section."""
-    return [
-        urljoin(BASE_URL, link["href"])
-        for link in section.find_all("a", href=True)
-        if link["href"].endswith(".pdf")
-    ]
+def extract_pdf_entries(section):
+    """Extract PDF links along with their type from a section."""
+    entries = []
+    for row in section.find_all("tr"):
+        cells = row.find_all("td")
+        if len(cells) >= 5:
+            link_tag = cells[2].find("a", href=True)
+            doc_type = cells[4].get_text(strip=True)
+            if link_tag and link_tag["href"].endswith(".pdf"):
+                full_url = urljoin(BASE_URL, link_tag["href"])
+                entries.append({
+                    "url": full_url,
+                    "type": doc_type  # e.g., Decision, Dismissal, Order
+                })
+    return entries
 
 
-def download_pdfs(pdf_urls, year):
-    """Download PDF files for a given year, skipping duplicates."""
-    year_dir = os.path.join(DATA_PATH, year)
-    os.makedirs(year_dir, exist_ok=True)
-
+def download_pdfs(pdf_entries, year):
+    """Download PDFs, organized by type within the year folder."""
     downloaded = 0
-    for url in pdf_urls:
+
+    for entry in pdf_entries:
+        url = entry["url"]
+        doc_type = entry["type"] or "Unknown"
         filename = os.path.basename(url)
-        filepath = os.path.join(year_dir, filename)
+
+        type_dir = os.path.join(DATA_PATH, year, doc_type)
+        os.makedirs(type_dir, exist_ok=True)
+        filepath = os.path.join(type_dir, filename)
 
         if os.path.exists(filepath):
             print(f"⏭️ Skipping duplicate: {filename}")
@@ -58,7 +71,7 @@ def download_pdfs(pdf_urls, year):
             response.raise_for_status()
             with open(filepath, "wb") as f:
                 f.write(response.content)
-            print(f"✅ Downloaded: {filename}")
+            print(f"✅ Downloaded: {filename} → {doc_type}")
             downloaded += 1
         except Exception as e:
             print(f"❌ Failed to download {filename}: {e}")
@@ -76,12 +89,12 @@ def main():
             print(f"⚠️ Could not find section for {year}\n")
             continue
 
-        pdf_links = extract_pdf_links(section)
-        if not pdf_links:
-            print(f"⚠️ No PDF links found for {year}\n")
+        pdf_entries = extract_pdf_entries(section)
+        if not pdf_entries:
+            print(f"⚠️ No PDF entries found for {year}\n")
             continue
 
-        download_pdfs(pdf_links, year)
+        download_pdfs(pdf_entries, year)
 
 
 if __name__ == "__main__":
