@@ -8,7 +8,7 @@ from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 
 BASE_URL = "https://www.cbca.gov/decisions/cda-cases.html"
-start_year = 2025
+start_year = 2015
 end_year = 2025
 YEARS = [str(year) for year in range(start_year, end_year + 1)]
 
@@ -25,10 +25,10 @@ def fetch_page():
 
 
 def find_year_section(soup, year):
-    """Find the HTML section corresponding to a given year."""
-    for tag in soup.find_all(["h1", "h2", "h3", "div"]):
-        if year in tag.get_text():
-            return tag.find_next("table")
+    """Find the HTML table corresponding exactly to a given year heading."""
+    for header in soup.find_all("h2"):
+        if header.get_text(strip=True) == year:
+            return header.find_next("table")
     return None
 
 
@@ -37,15 +37,19 @@ def extract_pdf_entries(section):
     entries = []
     for row in section.find_all("tr"):
         cells = row.find_all("td")
-        if len(cells) >= 5:
+        # allow for tables with at least 3 cells (up to 2014 have 4, from 2015 have 5+)
+        if len(cells) >= 3:
             link_tag = cells[2].find("a", href=True)
-            doc_type = cells[4].get_text(strip=True)
-            if link_tag and link_tag["href"].endswith(".pdf"):
+            # use 5th cell for type if present, otherwise default
+            doc_type = cells[4].get_text(strip=True) if len(cells) >= 5 else "Decision_Dissmisal_Order"
+            if link_tag and link_tag["href"].lower().endswith(".pdf"):
                 full_url = urljoin(BASE_URL, link_tag["href"])
-                entries.append({
-                    "url": full_url,
-                    "type": doc_type  # e.g., Decision, Dismissal, Order
-                })
+                entries.append(
+                    {
+                        "url": full_url,
+                        "type": doc_type or "Decision_Dissmisal_Order"
+                    }
+                )
     return entries
 
 
@@ -55,7 +59,7 @@ def download_pdfs(pdf_entries, year):
 
     for entry in pdf_entries:
         url = entry["url"]
-        doc_type = entry["type"] or "Unknown"
+        doc_type = entry["type"]
         filename = os.path.basename(url)
 
         type_dir = os.path.join(DATA_PATH, year, doc_type)
@@ -71,27 +75,27 @@ def download_pdfs(pdf_entries, year):
             response.raise_for_status()
             with open(filepath, "wb") as f:
                 f.write(response.content)
-            print(f"✅ Downloaded: {filename} → {doc_type}")
+            print(f"✅ Downloaded: {filename} -> {doc_type}")
             downloaded += 1
         except Exception as e:
             print(f"❌ Failed to download {filename}: {e}")
 
-    print(f"📦 {year}: {downloaded} new files downloaded.\n")
+    print(f"{year}: {downloaded} new files downloaded.")
 
 
 def main():
     soup = fetch_page()
     for year in YEARS:
-        print(f"🔍 Processing year: {year}")
+        print(f"Processing year: {year}")
         section = find_year_section(soup, year)
 
         if not section:
-            print(f"⚠️ Could not find section for {year}\n")
+            print(f"⚠️ Could not find section for {year}")
             continue
 
         pdf_entries = extract_pdf_entries(section)
         if not pdf_entries:
-            print(f"⚠️ No PDF entries found for {year}\n")
+            print(f"⚠️ No PDF entries found for {year}")
             continue
 
         download_pdfs(pdf_entries, year)
