@@ -24,10 +24,10 @@ def fetch_page():
 
 
 def find_year_section(soup, year):
-    """Find the HTML section corresponding to a given year."""
-    for tag in soup.find_all(["h1", "h2", "h3", "div"]):
-        if year in tag.get_text():
-            return tag.find_next("table")
+    """Find the HTML table corresponding exactly to a given year heading."""
+    for header in soup.find_all("h2"):
+        if header.get_text(strip=True) == year:
+            return header.find_next("table")
     return None
 
 
@@ -64,17 +64,17 @@ def download_pdfs(pdf_urls, year):
         except Exception as e:
             print(f"❌ Failed to download {filename}: {e}")
 
-    print(f"📦 {year}: {downloaded} new files downloaded.\n")
+    print(f"{year}: {downloaded} new files downloaded.")
 
 
 def main():
     soup = fetch_page()
     for year in YEARS:
-        print(f"🔍 Processing year: {year}")
+        print(f"Processing year: {year}")
         section = find_year_section(soup, year)
 
         if not section:
-            print(f"⚠️ Could not find section for {year}\n")
+            print(f"⚠️ Could not find section for {year}")
             continue
 
         pdf_links = extract_pdf_links(section)
