@@ -2,11 +2,14 @@ services:
   - type: web
     name: j4all-backend
     runtime: python
+    plan: free  # Specify free tier
+    region: oregon  # Choose region
+    branch: main  # Deploy from main branch
     buildCommand: pip install -r requirements.txt
-    startCommand: python run_server.py
+    startCommand: uvicorn api.main:app --host 0.0.0.0 --port 10000 --workers 1
     envVars:
       - key: PYTHON_VERSION
-        value: 3.11.4
+        value: "3.11.4"
       - key: ENVIRONMENT
         value: production
       - key: DEBUG
