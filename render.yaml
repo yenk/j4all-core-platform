@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: j4all-backend
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python run_server.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.4
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: "false"
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        value: 10000
+      - key: CHROMA_PATH
+        value: /tmp/chroma_db
+      - key: DATA_PATH
+        value: /tmp/data
+      # Add these in Render Dashboard (sensitive values):
+      # OPENAI_API_KEY - Your OpenAI API key
+      # SECRET_KEY - Generate a secure random string
+      # ALLOWED_ORIGINS - ["https://your-frontend-url.vercel.app","https://lumilens.ai"]
