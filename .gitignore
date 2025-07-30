@@ -36,3 +36,4 @@ requirements.txt
 tmp/
 dev/
 
+.vercel
