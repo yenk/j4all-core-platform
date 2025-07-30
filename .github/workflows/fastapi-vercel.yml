@@ -96,12 +96,16 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
+    - name: Install Vercel CLI
+      run: npm install -g vercel@latest
+
     - name: Deploy to Vercel
-      uses: amondnet/vercel-action@v25
-      with:
-        vercel-token: ${{ secrets.VERCEL_TOKEN }}
-        vercel-args: '--prod --name j4all-core-platform'
-        working-directory: ./
+      run: |
+        echo "🚀 Deploying to Vercel..."
+        vercel --prod --token $VERCEL_TOKEN --name j4all-core-platform --yes
+      env:
+        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      working-directory: ./
 
     - name: Verify Deployment
       run: |
