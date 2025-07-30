@@ -1,0 +1,67 @@
+# Vercel deployment ignore file
+# Exclude unnecessary files from Python FastAPI deployment
+
+# Development files
+.env
+.env.local
+.env.development
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.coverage
+.pytest_cache/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Poetry and dependencies
+.venv/
+venv/
+poetry.lock
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+README.md
+*.md
+docs/
+
+# Test files
+tests/
+test_*.py
+*_test.py
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+
+# Data files (if large)
+data/
+*.csv
+*.json
+!vercel.json
+!package.json
+
+# CI/CD files
+.github/

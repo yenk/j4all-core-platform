@@ -102,7 +102,7 @@ jobs:
     - name: Deploy to Vercel
       run: |
         echo "🚀 Deploying to Vercel..."
-        vercel --prod --token $VERCEL_TOKEN --name j4all-core-platform --yes
+        vercel --prod --token $VERCEL_TOKEN --confirm
       env:
         VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       working-directory: ./
