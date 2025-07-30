@@ -1,14 +1,19 @@
-name: Streamlit CI/CD
+name: Streamlit CI/CD (DISABLED)
 
+# Workflow disabled - FastAPI deployment is now primary
+# on:
+#   push:
+#     branches:
+#       - main
+#       - fetch-data
+#   pull_request:
+#     branches:
+#       - main
+#       - fetch-data
+
+# Manual trigger only - uncomment 'on:' section above to re-enable
 on:
-  push:
-    branches:
-      - main
-      - fetch-data
-  pull_request:
-    branches:
-      - main
-      - fetch-data
+  workflow_dispatch:  # Only manual triggers allowed
 
 jobs:
   test:
