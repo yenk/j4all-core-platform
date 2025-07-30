@@ -6,7 +6,7 @@ authors = ["Yen <ykrunner@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = "^3.11"
 
 # Core LangChain dependencies
 langchain = "^0.3.21"
@@ -14,8 +14,15 @@ langchain-community = "^0.3.20"
 langchain-openai = "^0.3.11"
 langchain-text-splitters = "^0.3.7"
 
-# Web framework
+# Web frameworks
 streamlit = "^1.32.0"
+fastapi = "^0.115.0"
+uvicorn = {extras = ["standard"], version = "^0.32.0"}
+
+# FastAPI dependencies
+pydantic = "^2.10.0"
+pydantic-settings = "^2.7.0"
+python-multipart = "^0.0.16"
 
 # Document processing
 pypdf = "^5.4.0"
@@ -31,6 +38,12 @@ tiktoken = "^0.9.0"
 # HTTP and utilities
 requests = "^2.32.3"
 python-dotenv = "^1.1.0"
+psutil = "^6.1.0"
+
+# Development dependencies
+pytest = "^8.3.0"
+pytest-asyncio = "^0.24.0"
+httpx = "^0.28.0"
 
 [build-system]
 requires = ["poetry-core"]

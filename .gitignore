@@ -1,5 +1,8 @@
 .venv/
 .env
+.env.local
+.env.production
+.env.development
 venv/
 .ipynb_checkpoints
 __pycache__/
@@ -14,6 +17,8 @@ app.db
 *.csv
 *.tsv
 *.json
+!vercel.json  # Allow vercel.json for deployment configuration
+!package.json # Allow package.json files
 
 chromadb.toml
 #.gradio/  # (Uncomment if you want to keep ignoring old Gradio files)
@@ -31,3 +36,4 @@ requirements.txt
 tmp/
 dev/
 
+.vercel

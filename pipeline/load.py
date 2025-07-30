@@ -8,6 +8,7 @@ from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 
 BASE_URL = "https://www.cbca.gov/decisions/cda-cases.html"
+YEARS = ["2026", "2025", "2024", "2023", "2022", "2021", "2020", "2019", "2018", "2017", "2016", "2015", "2014", "2013", "2012"]
 YEARS = ["2025", "2024", "2023", "2022", "2021"]
 
 # Root data directory
