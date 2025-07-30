@@ -1,0 +1,35 @@
+# Core FastAPI and server dependencies
+fastapi==0.115.9
+uvicorn[standard]==0.34.3
+python-multipart==0.0.16
+python-dotenv==1.1.0
+
+# AI and Vector Database
+openai==1.90.0
+chromadb==1.0.0
+langchain==0.3.21
+langchain-openai==0.3.11
+langchain-community==0.3.20
+langchain-text-splitters==0.3.7
+
+# Document processing
+pypdf==5.4.0
+beautifulsoup4==4.13.3
+
+# Data processing
+pydantic==2.11.7
+pydantic-settings==2.10.0
+numpy==1.26.4
+
+# System monitoring
+psutil==6.1.0
+
+# HTTP client
+httpx==0.28.1
+aiohttp==3.12.13
+
+# Authentication & security
+bcrypt==4.3.0
+
+# Logging & monitoring
+coloredlogs==15.0.1
