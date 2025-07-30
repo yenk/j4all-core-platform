@@ -3,10 +3,10 @@ name: FastAPI Backend - Vercel Deployment
 on:
   push:
     branches:
-      - deploy-facts
+      - main
   pull_request:
     branches:
-      - deploy-facts
+      - main
 
 jobs:
   test:
