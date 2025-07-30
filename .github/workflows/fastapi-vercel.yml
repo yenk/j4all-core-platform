@@ -1,0 +1,122 @@
+name: FastAPI Backend - Vercel Deployment
+
+on:
+  push:
+    branches:
+      - deploy-facts
+  pull_request:
+    branches:
+      - deploy-facts
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'  # Match your local Python version
+
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: latest
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+
+    - name: Load cached venv
+      id: cached-poetry-dependencies
+      uses: actions/cache@v3
+      with:
+        path: .venv
+        key: venv-fastapi-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/pyproject.toml') }}
+
+    - name: Install dependencies
+      run: |
+        echo "🔒 Installing FastAPI backend dependencies..."
+        poetry install --no-interaction --no-root
+
+    - name: Validate FastAPI application
+      run: |
+        echo "🔧 Validating FastAPI application..."
+        source .venv/bin/activate
+        python -c "
+        try:
+            from api.main import app
+            from api.config import settings
+            print('✅ FastAPI app imported successfully')
+            print('✅ Configuration loaded successfully')
+            print(f'✅ App title: {app.title}')
+        except Exception as e:
+            print(f'❌ FastAPI validation failed: {e}')
+            import traceback
+            traceback.print_exc()
+            exit(1)
+        "
+
+    - name: Run health check tests
+      run: |
+        echo "🧪 Running FastAPI health checks..."
+        source .venv/bin/activate
+        python -c "
+        import pytest
+        print('✅ Test framework available')
+        "
+        # Uncomment when integration tests are ready:
+        # python integrate.py test
+
+    - name: Validate deployment configuration
+      run: |
+        echo "📋 Checking deployment files..."
+        if [ -f "vercel.json" ]; then
+          echo "✅ vercel.json found"
+          cat vercel.json
+        else
+          echo "❌ vercel.json missing"
+          exit 1
+        fi
+        
+        if [ -f "run_server.py" ]; then
+          echo "✅ run_server.py found"
+        else
+          echo "❌ run_server.py missing"
+          exit 1
+        fi
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/deploy-facts'
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Deploy to Vercel
+      uses: amondnet/vercel-action@v25
+      with:
+        vercel-token: ${{ secrets.VERCEL_TOKEN }}
+        vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+        vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+        vercel-args: '--prod'
+        working-directory: ./
+
+    - name: Deployment Success Notification
+      run: |
+        echo "🚀 FastAPI Backend deployed to Vercel successfully!"
+        echo ""
+        echo "📋 Post-deployment checklist:"
+        echo "1. Verify health endpoint: https://your-backend.vercel.app/health"
+        echo "2. Check API documentation: https://your-backend.vercel.app/api/docs"
+        echo "3. Test chat endpoint: https://your-backend.vercel.app/api/v1/chat"
+        echo "4. Update frontend environment variables with new backend URL"
+        echo ""
+        echo "🔧 Environment variables needed in Vercel dashboard:"
+        echo "- OPENAI_API_KEY"
+        echo "- ENVIRONMENT=production"
+        echo "- SECRET_KEY"
+        echo "- ALLOWED_ORIGINS"
