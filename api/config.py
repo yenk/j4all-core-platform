@@ -47,6 +47,7 @@ class Settings(BaseSettings):
             "http://localhost:3000",
             "http://localhost:4000",
             "https://lumilens.ai",
+            "https://j4all-lumilens-ai.vercel.app",
             "https://*.vercel.app"
         ],
         description="Allowed CORS origins"
