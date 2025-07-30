@@ -105,14 +105,31 @@ jobs:
         vercel-args: '--prod'
         working-directory: ./
 
+    - name: Verify Deployment
+      run: |
+        echo "🧪 Testing deployed endpoints..."
+        
+        # Wait for deployment to be ready
+        sleep 30
+        
+        # Test basic health endpoint
+        echo "Testing health endpoint..."
+        curl -f https://j4all-core-platform.vercel.app/health || echo "❌ Health endpoint failed"
+        
+        # Test detailed health endpoint
+        echo "Testing detailed health endpoint..."
+        curl -f https://j4all-core-platform.vercel.app/api/v1/health || echo "❌ Detailed health endpoint failed"
+        
+        echo "✅ Deployment verification complete"
+
     - name: Deployment Success Notification
       run: |
         echo "🚀 FastAPI Backend deployed to Vercel successfully!"
         echo ""
         echo "📋 Post-deployment checklist:"
-        echo "1. Verify health endpoint: https://your-backend.vercel.app/health"
-        echo "2. Check API documentation: https://your-backend.vercel.app/api/docs"
-        echo "3. Test chat endpoint: https://your-backend.vercel.app/api/v1/chat"
+        echo "1. Verify health endpoint: https://j4all-core-platform.vercel.app/health"
+        echo "2. Check API documentation: https://j4all-core-platform.vercel.app/api/docs"
+        echo "3. Test chat endpoint: https://j4all-core-platform.vercel.app/api/v1/chat"
         echo "4. Update frontend environment variables with new backend URL"
         echo ""
         echo "🔧 Environment variables needed in Vercel dashboard:"

@@ -57,8 +57,8 @@ class Settings(BaseSettings):
     )
     
     # OpenAI
-    OPENAI_API_KEY: str = Field(
-        default="",
+    OPENAI_API_KEY: Optional[str] = Field(
+        default=None,
         description="OpenAI API key for embeddings and chat"
     )
     OPENAI_MODEL: str = Field(
@@ -135,12 +135,16 @@ class Settings(BaseSettings):
     @validator("OPENAI_API_KEY")
     def validate_openai_key(cls, v):
         """Validate OpenAI API key is provided."""
-        if not v:
-            # Try to get from environment
+        # If value is empty or placeholder, try environment
+        if not v or v == "your_openai_api_key_here":
             env_key = os.getenv("OPENAI_API_KEY")
-            if env_key:
+            if env_key and env_key != "your_openai_api_key_here":
                 return env_key
-            raise ValueError("OPENAI_API_KEY must be provided")
+            # Only raise error in production
+            if os.getenv("ENVIRONMENT") == "production":
+                raise ValueError("OPENAI_API_KEY must be provided in production")
+            # Allow empty key in development for testing
+            return v
         return v
     
     @validator("CHROMA_PATH", "DATA_PATH")

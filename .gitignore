@@ -17,6 +17,8 @@ app.db
 *.csv
 *.tsv
 *.json
+!vercel.json  # Allow vercel.json for deployment configuration
+!package.json # Allow package.json files
 
 chromadb.toml
 #.gradio/  # (Uncomment if you want to keep ignoring old Gradio files)
