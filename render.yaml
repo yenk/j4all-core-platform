@@ -10,7 +10,7 @@ services:
       # Use optimized requirements for faster builds (no CUDA packages)
       pip install --cache-dir /opt/render/project/.cache/pip --upgrade pip
       pip install --cache-dir /opt/render/project/.cache/pip -r requirements-render.txt
-    startCommand: uvicorn api.main:app --host 0.0.0.0 --port 10000 --workers 1
+    startCommand: uvicorn api.main:app --host 0.0.0.0 --port $PORT --workers 1
     envVars:
       - key: PYTHON_VERSION
         value: "3.11"
