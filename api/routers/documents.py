@@ -306,6 +306,14 @@ async def get_document_statistics(settings: Settings = Depends(get_settings)):
             detail=f"Failed to get statistics: {str(e)}"
         )
 
+@router.get("/documents/search")
+async def search_documents(q: str, settings: Settings = Depends(get_settings)):
+    """
+    Search documents by query string.
+    """
+    # TODO: Implement actual search logic using vector store or database
+    # For now, return a placeholder response
+    return {"results": [], "query": q}
 
 @router.get("/documents/supported-formats")
 async def get_supported_formats():

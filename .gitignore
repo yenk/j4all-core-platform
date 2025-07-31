@@ -37,3 +37,15 @@ tmp/
 dev/
 
 .vercel
+
+.env.test
+
+## Ignore deployment and documentation files except README.md
+deployment-checklist.md
+deployment*
+FASTAPI_SUMMARY.md
+*.md
+!README.md
+Dockerfile
+
+tests/investigate_active_code.py

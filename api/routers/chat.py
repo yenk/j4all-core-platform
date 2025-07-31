@@ -324,6 +324,15 @@ async def get_conversation(conversation_id: str):
     
     return conversation
 
+@router.get("/chat/history/{conversation_id}")
+async def get_chat_history(conversation_id: str, settings: Settings = Depends(get_settings)):
+    """
+    Retrieve chat history for a given conversation ID.
+    """
+    conversation = _conversations.get(conversation_id)
+    if not conversation:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    return conversation
 
 @router.get("/conversations", response_model=List[ChatHistory])
 async def list_conversations(limit: int = 10, skip: int = 0):
