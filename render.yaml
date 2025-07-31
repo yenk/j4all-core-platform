@@ -20,8 +20,6 @@ services:
         value: "false"
       - key: HOST
         value: 0.0.0.0
-      - key: PORT
-        value: 10000
       - key: CHROMA_PATH
         value: /tmp/chroma_db
       - key: DATA_PATH
