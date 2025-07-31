@@ -5,7 +5,7 @@ Provides endpoints for document analysis, legal insights extraction,
 and specialized legal document processing capabilities.
 """
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Body
 from pydantic import BaseModel, Field
 from typing import List, Dict, Any, Optional
 import logging
@@ -234,6 +234,13 @@ async def find_similar_documents(
             detail=f"Search failed: {str(e)}"
         )
 
+@router.post("/generate/brief")
+async def generate_brief(case_data: dict = Body(...), settings: Settings = Depends(get_settings)):
+    """
+    Generate a legal brief from provided case data.
+    """
+    # TODO: Implement actual brief generation logic
+    return {"brief": "This is a generated legal brief.", "case_data": case_data}
 
 @router.get("/analysis/capabilities")
 async def get_analysis_capabilities():
