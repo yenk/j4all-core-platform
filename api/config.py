@@ -53,7 +53,15 @@ class Settings(BaseSettings):
         description="Allowed CORS origins"
     )
     ALLOWED_HOSTS: List[str] = Field(
-        default=["localhost", "127.0.0.1", "*.vercel.app", "lumilens.ai"],
+        default=[
+            "localhost",
+            "127.0.0.1",
+            "*.vercel.app",
+            "lumilens.ai",
+            "lumilens-api.onrender.com",
+            "*.onrender.com",
+            "https-j4all-backend-onrender-com-health.onrender.com"
+        ],
         description="Allowed hosts for TrustedHost middleware"
     )
     

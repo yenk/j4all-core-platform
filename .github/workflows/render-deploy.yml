@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+      - '*'  # Trigger on all branches
+  workflow_dispatch:
 
 jobs:
   deploy:
