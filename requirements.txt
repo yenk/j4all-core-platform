@@ -88,6 +88,7 @@ posthog==5.4.0
 propcache==0.3.2
 protobuf==4.25.8
 psutil==6.1.0
+psycopg==3.2.9
 pyarrow==20.0.0
 pyasn1==0.6.1
 pyasn1_modules==0.4.2
@@ -96,6 +97,7 @@ pydantic-settings==2.10.0
 pydantic_core==2.33.2
 pydeck==0.9.1
 Pygments==2.19.2
+pymupdf4llm==0.0.27
 pypdf==5.4.0
 PyPika==0.48.9
 pyproject_hooks==1.2.0
