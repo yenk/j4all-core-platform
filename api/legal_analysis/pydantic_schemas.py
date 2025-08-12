@@ -4,7 +4,7 @@ from pydantic import BaseModel
 class Fact(BaseModel):
     id: int
     specific_fact_cited: str
-    relevancy_reason: str
+    relevance_reason: str
     contestability_reason: str
 
 
@@ -82,6 +82,10 @@ class RuleScoreSummary(BaseModel):
 
 
 class CombinedScoreSummary(BaseModel):
+    qa: str
+    facts: FactsExtractionOutput
+    procedural_rules: ProceduralRulesOutput
+    substantive_rules: SubstantiveRulesOutput
     admissible_rules_summary: list[RuleScoreSummary]
     relevance_rules_summary: list[RuleScoreSummary]
     total_admissibility_score: float

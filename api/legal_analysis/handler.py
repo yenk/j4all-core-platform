@@ -87,7 +87,7 @@ async def facts_extraction_endpoint(
     The following fields are identified which each fact:
     - "id": A zero-based index indicating the order in which the fact appears in the source text (starting from 0)
     - "specific_fact_cited": Exact sentence copied verbatim from the document
-    - "relevancy_reason": Why would the fact be relevant; explain how this fact could bear on jurisdiction, procedural posture, responsibility, or any legal issue the court might later address
+    - "relevance_reason": Why would the fact be relevant; explain how this fact could bear on jurisdiction, procedural posture, responsibility, or any legal issue the court might later address
     - "contestability_reason": Why might the fact be contested; explain why the fact might be challenged, dismissed, or considered immaterial; leave empty if clearly reliable and material
 
     Parameters:
@@ -433,7 +433,7 @@ async def facts_and_rules_extraction(md_text: str) -> FactsAndRulesOutput:
 
 
 @router.post("/admissibility_scoring", response_model=AdmissibilityScoringOutput)
-async def visualize_admissibility_scoring(md_text: str) -> AdmissibilityScoringOutput:
+async def visualize_admissibility_scoring(md_text: str, qa_text: str) -> AdmissibilityScoringOutput:
     """
     This endpoint accepts a text input describing the factual and procedural history of a case
     (prior to litigation) and returns a list of procedural rules scored on four dimensions: doctrinal fit, fact match,
@@ -457,6 +457,7 @@ async def visualize_admissibility_scoring(md_text: str) -> AdmissibilityScoringO
     Parameters:
 
         md_text (str): Source document containing pre-appeal case content.
+        qa_text (str): Structured legal reasoning presented as Questions & Answers
 
     Returns:
 
@@ -476,6 +477,9 @@ async def visualize_admissibility_scoring(md_text: str) -> AdmissibilityScoringO
         }
 
     Example Input:
+
+
+    md_text:
 
         CBCA 7451
         QUALITY TRUST, INC.,
@@ -514,12 +518,48 @@ async def visualize_admissibility_scoring(md_text: str) -> AdmissibilityScoringO
         The following day, the contracting officer and QTI exchanged a series of emails seeking to clarify the basis of QTI’s claim and the payment request for $75,840.25. See Exhibits 151, 152. In its replies, QTI asserted that the nearly $52,000 modification to the contract value (modification 5) formed the basis of its claim but did not explain how. See Exhibit 152. On June 8, 2022, QTI sent the contracting officer three emails, the last of which offered to “justify the $481,109.75.” Exhibit 153 at 4. QTI asserted that it could support its claim with the use of the Eichleay formula. See id. (“For the larger amount[,] QTI will claim under the EIKLAY [sic] Formula.”).
 
         On June 14, 2022, the contracting officer denied the claim, concluding that QTI had not provided support for its claim. Exhibit 154 at 4.
+
+    qa_text:
+
+        1. Does this court have proper jurisdiction of the parties and the subject matter of the case, if so, why?:
+        Yes, the court has proper jurisdiction because it involves a contract dispute between Quality Trust, Inc. and the Department of the Interior, which falls under the jurisdiction of the Board of Contract Appeals as per federal contracting laws.
+
+        2. What is the procedural posture of the case? If this is an appeal from a lower court, what was the decision of that court, and which litigant is appealing it?:
+        This is an appeal from a decision made by a contracting officer for the Department of the Interior, who denied Quality Trust, Inc.'s claim for lack of support. Quality Trust, Inc. is the appellant.
+
+        3. What is the basis for the appeal? In other words, what does the appellant claim the lower court wrongly decided? For instance, did that court exclude key evidence or misinterpret applicable law?:
+        The basis for the appeal is that the contracting officer wrongly denied Quality Trust, Inc.'s claim by concluding that QTI had not provided sufficient support for its claim amount of $481,109.75.
+
+        4. What other procedural grounds exist to dismiss the case or to return it for a revised hearing and decision to the lower court?:
+        Procedural grounds that could exist include failure to exhaust administrative remedies, lack of jurisdiction if the claim was not properly submitted, or insufficient evidence to support the claim.
+
+        5. What are the facts introduced in the case? What facts are undisputed and what facts are disputed?:
+        Undisputed facts include the existence of a contract between DOI and QTI, the timeline of contract modifications, and the suspensions of work. Disputed facts include the justification for the claim amount of $481,109.75 and whether QTI provided adequate support for its claim.
+
+        6. What claims or causes of action were brought and argued by the litigants?:
+        Quality Trust, Inc. brought a claim for payment under the contract's Disputes clause, seeking compensation for alleged costs incurred due to delays and changes in the project.
+
+        7. What is the substantive law that actually applies to the facts of this case?:
+        The substantive law that applies includes the Federal Acquisition Regulation (FAR), specifically FAR clause 52.242-14 regarding the suspension of work and the Disputes clause, FAR 52.233-1.
+
+        8. How have prior courts dealt with the procedural and substantive issues?:
+        Prior courts have typically required contractors to provide adequate documentation and justification for claims made under contract disputes, emphasizing the need for clear evidence of incurred costs and the basis for claims.
+
+        9. Would there be “urgency” or other reason for this court to issue a temporary injunction or order if the case were to proceed?:
+        There may be urgency if Quality Trust, Inc. can demonstrate that delays in resolving the claim could lead to significant financial harm or operational disruptions, warranting a temporary injunction.
+
+        10. What issues of fact or law would this court likely ask the parties to submit briefs (memoranda) on if it were to proceed to decision?:
+        The court would likely ask for briefs on the adequacy of the evidence provided by QTI to support its claim, the interpretation of the contract terms regarding suspensions and delays, and the application of the Eichleay formula for calculating damages.
+
+        11. What facts, law, and precedent would the court likely cite if it were to issue a decision based on the current record?:
+        The court would likely cite the specific provisions of the FAR relevant to contract modifications and claims, the timeline of events leading to the claim, and precedents regarding the necessity of providing detailed support for claims in contract disputes.
+
     """
-    return await llm_analysis.admissibility_scoring_results(md_text)
+    return await llm_analysis.admissibility_scoring_results(md_text, qa_text)
 
 
 @router.post("/relevance_scoring", response_model=RelevanceScoringOutput)
-async def visualize_relevance_scoring(md_text: str) -> RelevanceScoringOutput:
+async def visualize_relevance_scoring(md_text: str, qa_text: str) -> RelevanceScoringOutput:
     """
     This endpoint accepts a text input describing the factual and legal background of a contract dispute
     (prior to litigation) and returns a list of substantive rules scored on four dimensions: doctrinal fit, fact match,
@@ -543,6 +583,7 @@ async def visualize_relevance_scoring(md_text: str) -> RelevanceScoringOutput:
     Parameters:
 
         md_text (str): Source document containing pre-appeal case content.
+        qa_text (str): Structured legal reasoning presented as Questions & Answers
 
     Returns:
 
@@ -562,6 +603,8 @@ async def visualize_relevance_scoring(md_text: str) -> RelevanceScoringOutput:
         }
 
     Example Input:
+
+    md_text:
 
         CBCA 7451
         QUALITY TRUST, INC.,
@@ -600,8 +643,44 @@ async def visualize_relevance_scoring(md_text: str) -> RelevanceScoringOutput:
         The following day, the contracting officer and QTI exchanged a series of emails seeking to clarify the basis of QTI’s claim and the payment request for $75,840.25. See Exhibits 151, 152. In its replies, QTI asserted that the nearly $52,000 modification to the contract value (modification 5) formed the basis of its claim but did not explain how. See Exhibit 152. On June 8, 2022, QTI sent the contracting officer three emails, the last of which offered to “justify the $481,109.75.” Exhibit 153 at 4. QTI asserted that it could support its claim with the use of the Eichleay formula. See id. (“For the larger amount[,] QTI will claim under the EIKLAY [sic] Formula.”).
 
         On June 14, 2022, the contracting officer denied the claim, concluding that QTI had not provided support for its claim. Exhibit 154 at 4.
+    
+    qa_text:
+
+        1. Does this court have proper jurisdiction of the parties and the subject matter of the case, if so, why?:
+        Yes, the court has proper jurisdiction because it involves a contract dispute between Quality Trust, Inc. and the Department of the Interior, which falls under the jurisdiction of the Board of Contract Appeals as per federal contracting laws.
+
+        2. What is the procedural posture of the case? If this is an appeal from a lower court, what was the decision of that court, and which litigant is appealing it?:
+        This is an appeal from a decision made by a contracting officer for the Department of the Interior, who denied Quality Trust, Inc.'s claim for lack of support. Quality Trust, Inc. is the appellant.
+
+        3. What is the basis for the appeal? In other words, what does the appellant claim the lower court wrongly decided? For instance, did that court exclude key evidence or misinterpret applicable law?:
+        The basis for the appeal is that the contracting officer wrongly denied Quality Trust, Inc.'s claim by concluding that QTI had not provided sufficient support for its claim amount of $481,109.75.
+
+        4. What other procedural grounds exist to dismiss the case or to return it for a revised hearing and decision to the lower court?:
+        Procedural grounds that could exist include failure to exhaust administrative remedies, lack of jurisdiction if the claim was not properly submitted, or insufficient evidence to support the claim.
+
+        5. What are the facts introduced in the case? What facts are undisputed and what facts are disputed?:
+        Undisputed facts include the existence of a contract between DOI and QTI, the timeline of contract modifications, and the suspensions of work. Disputed facts include the justification for the claim amount of $481,109.75 and whether QTI provided adequate support for its claim.
+
+        6. What claims or causes of action were brought and argued by the litigants?:
+        Quality Trust, Inc. brought a claim for payment under the contract's Disputes clause, seeking compensation for alleged costs incurred due to delays and changes in the project.
+
+        7. What is the substantive law that actually applies to the facts of this case?:
+        The substantive law that applies includes the Federal Acquisition Regulation (FAR), specifically FAR clause 52.242-14 regarding the suspension of work and the Disputes clause, FAR 52.233-1.
+
+        8. How have prior courts dealt with the procedural and substantive issues?:
+        Prior courts have typically required contractors to provide adequate documentation and justification for claims made under contract disputes, emphasizing the need for clear evidence of incurred costs and the basis for claims.
+
+        9. Would there be “urgency” or other reason for this court to issue a temporary injunction or order if the case were to proceed?:
+        There may be urgency if Quality Trust, Inc. can demonstrate that delays in resolving the claim could lead to significant financial harm or operational disruptions, warranting a temporary injunction.
+
+        10. What issues of fact or law would this court likely ask the parties to submit briefs (memoranda) on if it were to proceed to decision?:
+        The court would likely ask for briefs on the adequacy of the evidence provided by QTI to support its claim, the interpretation of the contract terms regarding suspensions and delays, and the application of the Eichleay formula for calculating damages.
+
+        11. What facts, law, and precedent would the court likely cite if it were to issue a decision based on the current record?:
+        The court would likely cite the specific provisions of the FAR relevant to contract modifications and claims, the timeline of events leading to the claim, and precedents regarding the necessity of providing detailed support for claims in contract disputes.
+
     """
-    return await llm_analysis.relevance_scoring_results(md_text)
+    return await llm_analysis.relevance_scoring_results(md_text, qa_text)
 
 
 @router.post("/scoring_results", response_model=CombinedScoreSummary)
@@ -635,9 +714,25 @@ async def visualize_scoring(md_text: str) -> CombinedScoreSummary:
 
     Returns:
 
-        CombinedScoreSummary: A structured scoring breakdown of extracted rules and their legal strength
+        CombinedScoreSummary: 
 
+            qa (str): Structured legal reasoning by answering key questions that a court or Board would consider in evaluating the case.
 
+            facts (FactsExtractionOutput): A list of extracted facts with associated relevance and contestability justifications.
+
+            procedural_rules (ProceduralRulesOutput): A list of substantive legal rules, each with an explanation of applicability and legal relevance.
+
+            substantive_rules (SubstantiveRulesOutput): A structured bundle containing facts, procedural rules, and substantive rules.
+
+            admissible_rules_summary (list[RuleScoreSummary): List of procedural rules scored on four dimensions: doctrinal fit, fact match, party assertion, and precedent alignment.
+
+            relevance_rules_summary (list[RuleScoreSummary): List of substantive rules scored on four dimensions: doctrinal fit, fact match, party assertion, and precedent alignment.
+
+            total_admissibility_score (float): Overall average scores for procedural rules
+
+            total_relevance_score (float): Overall average scores for substantive rules
+
+            
     Example Input:
 
         CBCA 7451

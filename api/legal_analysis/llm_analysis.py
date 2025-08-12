@@ -4,7 +4,7 @@ import pymupdf4llm
 from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser, PydanticOutputParser
-from api.legal_analysis import prompts as extraction_prompts
+from api.legal_analysis import prompts
 from api.legal_analysis.pydantic_schemas import (
     FactsExtractionOutput,
     ProceduralRulesOutput,
@@ -37,7 +37,7 @@ async def legal_reasoning_qa(md_text: str) -> str:
     opinions or decisions"""
     prompt = ChatPromptTemplate.from_messages(
         [
-            ("system", extraction_prompts.LEGAL_REASONING_QUESTIONS_AND_ANSWERS_PROMPT),
+            ("system", prompts.LEGAL_REASONING_QUESTIONS_AND_ANSWERS_PROMPT),
             ("user", "{user_input}"),
         ]
     )
@@ -49,7 +49,7 @@ async def legal_reasoning_qa(md_text: str) -> str:
 async def facts_extraction(md_text: str, qa_text: str) -> FactsExtractionOutput:
     """Extract factual assertions from document + legal Q&A."""
     prompt = ChatPromptTemplate.from_messages(
-        [("system", extraction_prompts.FACTS_EXTRACTION_PROMPT)]
+        [("system", prompts.FACTS_EXTRACTION_PROMPT)]
     )
     output_parser = PydanticOutputParser(pydantic_object=FactsExtractionOutput)
     chain = prompt | model | output_parser
@@ -66,7 +66,7 @@ async def procedural_rules_extraction(
     """
     prompt = ChatPromptTemplate.from_messages(
         [
-            ("system", extraction_prompts.PROCEDURAL_RULES_EXTRACTION_PROMPT),
+            ("system", prompts.PROCEDURAL_RULES_EXTRACTION_PROMPT),
         ]
     )
     output_parser = PydanticOutputParser(pydantic_object=ProceduralRulesOutput)
@@ -79,7 +79,7 @@ async def filter_procedural_rules(
 ) -> ProceduralRulesOutput:
     """Filters out substantive rules, keeping only procedural ones."""
     prompt = ChatPromptTemplate.from_messages(
-        [("system", extraction_prompts.FILTER_PROCEDURAL_RULES_PROMPT)]
+        [("system", prompts.FILTER_PROCEDURAL_RULES_PROMPT)]
     )
     output_parser = PydanticOutputParser(pydantic_object=ProceduralRulesOutput)
     chain = prompt | model | output_parser
@@ -96,7 +96,7 @@ async def substantive_rules_extraction(
     """
     prompt = ChatPromptTemplate.from_messages(
         [
-            ("system", extraction_prompts.SUBSTANTIVE_RULES_EXTRACTION_PROMPT),
+            ("system", prompts.SUBSTANTIVE_RULES_EXTRACTION_PROMPT),
         ]
     )
     output_parser = PydanticOutputParser(pydantic_object=SubstantiveRulesOutput)
@@ -133,7 +133,7 @@ async def admissibility_scoring(
 ) -> AdmissibilityScoringOutput:
     """Scores admissibility of procedural rules based on facts and Q&A legal context."""
     prompt = ChatPromptTemplate.from_messages(
-        [("system", extraction_prompts.ADMISSIBILITY_SCORING_PROMPT)]
+        [("system", prompts.ADMISSIBILITY_SCORING_PROMPT)]
     )
     output_parser = PydanticOutputParser(pydantic_object=AdmissibilityScoringOutput)
     chain = prompt | model | output_parser
@@ -146,11 +146,13 @@ async def admissibility_scoring(
     )
 
 
-async def admissibility_scoring_results(md_text: str) -> AdmissibilityScoringOutput:
+async def admissibility_scoring_results(md_text: str, qa_text:str) -> AdmissibilityScoringOutput:
     """Scores admissibility of procedural rules from a legal document"""
-    qa_text = await legal_reasoning_qa(md_text)
-    facts = await facts_extraction(md_text, qa_text)
-    procedural = await procedural_rules_extraction(md_text, qa_text)
+    facts_task = asyncio.create_task(facts_extraction(md_text, qa_text))
+    procedural_task = asyncio.create_task(procedural_rules_extraction(md_text, qa_text))
+    facts, procedural = await asyncio.gather(
+        facts_task, procedural_task
+    )
     scoring_input = AdmissibilityScoringInput(
         facts=facts, procedural_rules=procedural, qa=qa_text
     )
@@ -161,7 +163,7 @@ async def relevance_scoring(data: RelevanceScoringInput) -> RelevanceScoringOutp
     """Scores relevance of substantive rules based on facts and Q&A legal context."""
     prompt = ChatPromptTemplate.from_messages(
         [
-            ("system", extraction_prompts.RELEVANCE_SCORING_PROMPT),
+            ("system", prompts.RELEVANCE_SCORING_PROMPT),
         ]
     )
     output_parser = PydanticOutputParser(pydantic_object=RelevanceScoringOutput)
@@ -175,11 +177,13 @@ async def relevance_scoring(data: RelevanceScoringInput) -> RelevanceScoringOutp
     )
 
 
-async def relevance_scoring_results(md_text: str) -> RelevanceScoringOutput:
+async def relevance_scoring_results(md_text: str, qa_text: str) -> RelevanceScoringOutput:
     """Scores relevance of procedural rules from a legal document."""
-    qa_text = await legal_reasoning_qa(md_text)
-    facts = await facts_extraction(md_text, qa_text)
-    substantive = await substantive_rules_extraction(md_text, qa_text)
+    facts_task = asyncio.create_task(facts_extraction(md_text, qa_text))
+    substantive_task = asyncio.create_task(substantive_rules_extraction(md_text, qa_text))
+    facts, substantive = await asyncio.gather(
+        facts_task, substantive_task
+    )
     scoring_input = RelevanceScoringInput(
         facts=facts, substantive_rules=substantive, qa=qa_text
     )
@@ -231,6 +235,10 @@ async def process_relevance_scores(
 
 
 async def summarize_all_scores(
+    qa_text: str,
+    facts: FactsExtractionOutput,
+    procedural_rules: ProceduralRulesOutput,
+    substantive_rules: SubstantiveRulesOutput,
     admissibility_data: AdmissibilityScoringOutput,
     relevance_data: RelevanceScoringOutput,
 ) -> CombinedScoreSummary:
@@ -244,6 +252,10 @@ async def summarize_all_scores(
         substantive
     )
     return CombinedScoreSummary(
+        qa=qa_text,
+        facts=facts,
+        procedural_rules=procedural_rules,
+        substantive_rules=substantive_rules,
         admissible_rules_summary=procedural,
         relevance_rules_summary=substantive,
         total_admissibility_score=round(total_admissible_score, 3),
@@ -254,18 +266,29 @@ async def summarize_all_scores(
 async def scoring_results(md_text: str) -> CombinedScoreSummary:
     """Scores rules based on on a legal document."""
     qa_text = await legal_reasoning_qa(md_text)
-    facts = await facts_extraction(md_text, qa_text)
-    procedural = await procedural_rules_extraction(md_text, qa_text)
-    substantive = await substantive_rules_extraction(md_text, qa_text)
-
+    facts_task = asyncio.create_task(facts_extraction(md_text, qa_text))
+    procedural_task = asyncio.create_task(procedural_rules_extraction(md_text, qa_text))
+    substantive_task = asyncio.create_task(substantive_rules_extraction(md_text, qa_text))
+    facts, procedural, substantive = await asyncio.gather(
+        facts_task, procedural_task, substantive_task
+    )
     admissibility_scoring_input = AdmissibilityScoringInput(
         facts=facts, procedural_rules=procedural, qa=qa_text
     )
-    admissibility_data = await admissibility_scoring(admissibility_scoring_input)
-
     relevance_scoring_input = RelevanceScoringInput(
         facts=facts, substantive_rules=substantive, qa=qa_text
     )
-    relevance_data = await relevance_scoring(relevance_scoring_input)
+    admissibility_data_task = asyncio.create_task(admissibility_scoring(admissibility_scoring_input))
+    relevance_data_task = asyncio.create_task(relevance_scoring(relevance_scoring_input))
+    admissibility_data, relevance_data = await asyncio.gather(
+        admissibility_data_task, relevance_data_task
+    )
 
-    return await summarize_all_scores(admissibility_data, relevance_data)
+    return await summarize_all_scores(
+        qa_text,
+        facts,
+        procedural,
+        substantive,
+        admissibility_data, 
+        relevance_data
+    )
