@@ -20,6 +20,7 @@ from typing import AsyncGenerator
 
 from api.config import settings
 from api.routers import chat, documents, health, analysis
+from api.legal_analysis.handler import router as legal_analysis
 from api.middleware.rate_limit import RateLimitMiddleware
 from api.middleware.auth import AuthMiddleware
 from api.core.exceptions import setup_exception_handlers
@@ -132,6 +133,7 @@ app.include_router(health.router, prefix="/api/v1", tags=["health"])
 app.include_router(chat.router, prefix="/api/v1", tags=["chat"])
 app.include_router(documents.router, prefix="/api/v1", tags=["documents"])
 app.include_router(analysis.router, prefix="/api/v1", tags=["analysis"])
+app.include_router(legal_analysis, prefix="/api/legal_analysis", tags=["legal analysis"])
 
 @app.get("/")
 async def root():
