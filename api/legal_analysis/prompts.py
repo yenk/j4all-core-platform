@@ -82,7 +82,7 @@ Return a valid JSON object with this structure:
     {{
       "id": int,  
       "specific_fact_cited": str,  
-      "relevancy_reason: str,  
+      "relevance_reason: str,  
       "contestability_reason": str  
     }},
     ...
@@ -92,7 +92,7 @@ Return a valid JSON object with this structure:
 Where:
 - "id": A zero-based index indicating the order in which the fact appears in the source text (starting from 0)
 - "specific_fact_cited": Exact sentence copied verbatim from the document
-- "relevancy_reason": Why would the fact be relevant; explain how this fact could bear on jurisdiction, procedural posture, responsibility, or any legal issue the court might later address
+- "relevance_reason": Why would the fact be relevant; explain how this fact could bear on jurisdiction, procedural posture, responsibility, or any legal issue the court might later address
 - "contestability_reason": Why might the fact be contested; explain why the fact might be challenged, dismissed, or considered immaterial; leave empty if clearly reliable and material
 
 Guidelines:

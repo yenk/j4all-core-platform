@@ -14,7 +14,7 @@ import pymupdf4llm
 import psycopg
 from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
-from langchain_core.output_parsers import JsonOutputParser
+from langchain_core.output_parsers import JsonOutputParser, StrOutputParser
 from langchain_core.documents import Document
 from langchain_community.vectorstores import Chroma
 from langchain_community.document_loaders import PyPDFDirectoryLoader
@@ -42,82 +42,78 @@ if not is_running_in_spaces:
 class CitedFact(TypedDict):
     id: int
     specific_fact_cited: str
-    why_was_the_fact_relevant: str
-    why_was_the_fact_not_relevant: str
+    relevance_reason: str
+    contestability_reason: str
 
 
 class CitedProceduralRule(TypedDict):
-    procedural_rule_cited: str
-    effect_on_courts_decision_or_case_handling: str
+    procedural_rule: str
+    effects: str
 
 
 class CitedSubstantiveRule(TypedDict):
-    principle_of_substantive_law: str
-    facts_making_principle_applicable: str
-    how_principle_and_facts_were_crucial_to_the_decision: str
+    substantive_law: str
+    applicability: str
+    relevance: str
 
 
 class ExtractedFactsAndRules(TypedDict):
+    qa: str
     facts: list[CitedFact]
     procedural_rules: list[CitedProceduralRule]
     substantive_rules: list[CitedSubstantiveRule]
 
 
-model = ChatOpenAI(model="gpt-4o-mini", temperature=0)
-output_parser = JsonOutputParser()
+model = ChatOpenAI(model=os.getenv("OPENAI_MODEL"), temperature=0)
 
 
-def facts_extraction(md_text: str) -> list[CitedFact]:
+def legal_reasoning_qa(md_text: str) -> str:
+    """Answer a set of questions Judges and courts answer to write their
+    opinions or decisions"""
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", extraction_prompts.LEGAL_REASONING_QUESTIONS_AND_ANSWERS_PROMPT),
+            ("user", "{user_input}"),
+        ]
+    )
+    chain = prompt | model | StrOutputParser()
+    return chain.invoke({"user_input": md_text})
+
+
+def facts_extraction(md_text: str, qa_text: str) -> list[CitedFact]:
     """Extracts facts from a document containing a contract dispute case"""
-    facts_extraction_prompt = ChatPromptTemplate.from_messages(
-        [
-            ("system", extraction_prompts.FACTS_EXTRACTION_PROMPT),
-            ("user", "{user_input}"),
-        ]
+    prompt = ChatPromptTemplate.from_messages(
+        [("system", extraction_prompts.FACTS_EXTRACTION_PROMPT)]
     )
-    facts_extraction_chain = facts_extraction_prompt | model | output_parser
-    facts_extraction_input_params = {"user_input": md_text}
-    facts_extraction_response = facts_extraction_chain.invoke(
-        facts_extraction_input_params
-    )
-    return facts_extraction_response
+    chain = prompt | model | JsonOutputParser()
+    return chain.invoke({"text": md_text, "qa": qa_text})
 
 
-def procedural_rules_extraction(md_text: str) -> list[CitedProceduralRule]:
+def procedural_rules_extraction(md_text: str, qa_text: str) -> list[CitedProceduralRule]:
     """Extracts the procedural rules from a document containing a contract dispute case"""
-    procedural_rules_prompt = ChatPromptTemplate.from_messages(
-        [
-            (
-                "system",
-                extraction_prompts.PROCEDURAL_RULES_EXTRACTION_PROMPT,
-            ),
-            ("user", "{user_input}"),
-        ]
+    prompt = ChatPromptTemplate.from_messages(
+        [("system", extraction_prompts.PROCEDURAL_RULES_EXTRACTION_PROMPT)]
     )
-    procedural_rules_extraction_chain = procedural_rules_prompt | model | output_parser
-    procedural_rules_extraction_input_params = {"user_input": md_text}
-    procedural_rules_extraction_response = procedural_rules_extraction_chain.invoke(
-        procedural_rules_extraction_input_params
-    )
-    return procedural_rules_extraction_response
+    chain = prompt | model | JsonOutputParser()
+    return chain.invoke({"text": md_text, "qa": qa_text})
 
 
-def sustantive_rules_extraction(md_text: str) -> list[CitedSubstantiveRule]:
+def filter_procedural_rules(rules: list[CitedProceduralRule]) -> list[CitedProceduralRule]:
+    """Filter out substantive rules from a list of procedural rules"""
+    prompt = ChatPromptTemplate.from_messages(
+        [("system", extraction_prompts.FILTER_PROCEDURAL_RULES_PROMPT)]
+    )
+    chain = prompt | model | JsonOutputParser()
+    return chain.invoke({"rules": rules})
+
+
+def substantive_rules_extraction(md_text: str, qa_text: str) -> list[CitedSubstantiveRule]:
     """Extracts substantive rules from a document containing a contract dispute case."""
-    substantive_rules_extraction_prompt = ChatPromptTemplate.from_messages(
-        [
-            ("system", extraction_prompts.SUBSTANTIVE_RULES_EXTRACTION_PROMPT),
-            ("user", "{user_input}"),
-        ]
+    prompt = ChatPromptTemplate.from_messages(
+        [("system", extraction_prompts.SUBSTANTIVE_RULES_EXTRACTION_PROMPT)]
     )
-    substantive_rules_extraction_chain = (
-        substantive_rules_extraction_prompt | model | output_parser
-    )
-    substantive_rules_exctraction_input_params = {"user_input": md_text}
-    substantive_rules_exctraction_response = substantive_rules_extraction_chain.invoke(
-        substantive_rules_exctraction_input_params
-    )
-    return substantive_rules_exctraction_response
+    chain = prompt | model | JsonOutputParser()
+    return chain.invoke({"text": md_text, "qa": qa_text})
 
 
 def extract_facts_and_rules(doc_path: str) -> ExtractedFactsAndRules:
@@ -125,51 +121,16 @@ def extract_facts_and_rules(doc_path: str) -> ExtractedFactsAndRules:
     Extracts fact patterns, procedural rules, and substantive legal rules from a PDF
     containing a contract dispute decision/order and returns the extracted content.
     """
-    # Parse PDF to Markdown
     md_text = pymupdf4llm.to_markdown(doc_path)
-
-    # Extract facts and rules
-    facts_extraction_response: list[CitedFact] = facts_extraction(md_text)
-
-    procedural_rules_extraction_response: list[CitedProceduralRule] = (
-        procedural_rules_extraction(md_text)
-    )
-    substantive_rules_extraction_response: list[CitedSubstantiveRule] = (
-        sustantive_rules_extraction(md_text)
-    )
-    facts_and_rules: ExtractedFactsAndRules = {
-        "facts": facts_extraction_response,
-        "procedural_rules": procedural_rules_extraction_response,
-        "substantive_rules": substantive_rules_extraction_response,
+    qa_text = legal_reasoning_qa(md_text)
+    procedural_rules = procedural_rules_extraction(md_text, qa_text)
+    filtered_procedural_rules = filter_procedural_rules(procedural_rules)
+    return {
+        "qa": qa_text,
+        "facts": facts_extraction(md_text, qa_text),
+        "procedural_rules": filtered_procedural_rules,
+        "substantive_rules": substantive_rules_extraction(md_text, qa_text),
     }
-
-    return facts_and_rules
-
-
-def save_extraction_as_json(results: dict, doc_path: str, output_path: str) -> None:
-    json_path = f"{output_path}/{os.path.splitext(os.path.basename(doc_path))[0]}.json"
-    with open(json_path, "w", encoding="utf-8") as f:
-        json.dump(results, f, indent=4, ensure_ascii=False)
-
-
-def save_extraction_as_excel(facts_and_rules, doc_path: str, output_path: str) -> None:
-    excel_path = f"{output_path}/{os.path.splitext(os.path.basename(doc_path))[0]}.xlsx"
-
-    facts_df = pd.DataFrame(
-        {
-            "id": list(range(len(facts_and_rules["facts"]))),
-            "Fact": facts_and_rules["facts"],
-        }
-    )
-    procedural_df = pd.DataFrame(facts_and_rules["procedural_rules"])
-    substantive_rules_df = pd.DataFrame(facts_and_rules["substantive_rules"])
-
-    with pd.ExcelWriter(excel_path) as writer:
-        facts_df.to_excel(writer, sheet_name="Fact Pattern", index=False)
-        procedural_df.to_excel(writer, sheet_name="Procedural Rules", index=False)
-        substantive_rules_df.to_excel(
-            writer, sheet_name="Substantive Rules", index=False
-        )
 
 
 def create_or_load_vector_store() -> Chroma:
@@ -188,6 +149,10 @@ def create_or_load_vector_store() -> Chroma:
 
 def prepare_chunks(doc_name: str, extracted: ExtractedFactsAndRules) -> list[Document]:
     return [
+        Document(
+            page_content=json.dumps(extracted["qa"], indent=2),
+            metadata={"doc_name": doc_name, "type": "qa"},
+        ),
         Document(
             page_content=json.dumps(extracted["facts"], indent=2),
             metadata={"doc_name": doc_name, "type": "facts"},
