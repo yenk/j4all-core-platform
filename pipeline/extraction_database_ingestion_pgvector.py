@@ -1,24 +1,26 @@
 """
 Standalone script for:
-- Extracting facts and applicables rules from a PDF of contract disputes
-- Create a PostgreSQL database to store the extracted facts and rules
+- Extracting facts and applicable rules from contract dispute PDFs
+- Storing them as vector-embedded chunks in a PostgreSQL + pgvector database
 """
 
 import os
 import json
 import glob
 from typing import TypedDict
+from dotenv import load_dotenv
 
-import pandas as pd
 import pymupdf4llm
 import psycopg
+from pgvector.psycopg import register_vector
 from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser, StrOutputParser
+from langchain_core.documents import Document
+from langchain_community.embeddings import OpenAIEmbeddings
 from tqdm import tqdm
 
 import extraction_prompts as extraction_prompts
-
 
 is_running_in_spaces: bool = "SPACE_ID" in os.environ
 if not is_running_in_spaces:
@@ -122,147 +124,97 @@ def extract_facts_and_rules(doc_path: str) -> ExtractedFactsAndRules:
     }
 
 
-def connect_to_db() -> None:
-    return psycopg.connect(
+def connect_to_db():
+    conn = psycopg.connect(
         dbname=os.getenv("POSTGRES_DB"),
         user=os.getenv("POSTGRES_USER"),
         password=os.getenv("POSTGRES_PASSWORD"),
         host=os.getenv("POSTGRES_HOST"),
         port=os.getenv("POSTGRES_PORT"),
     )
+    register_vector(conn)
+    return conn
 
 
-def initialize_schema() -> None:
+def initialize_vector_schema():
     with connect_to_db() as conn:
         with conn.cursor() as cur:
+            cur.execute("CREATE EXTENSION IF NOT EXISTS vector;")
             cur.execute(
                 """
-                CREATE TABLE IF NOT EXISTS facts (
+                CREATE TABLE IF NOT EXISTS facts_and_rules (
                     id SERIAL PRIMARY KEY,
                     doc_name TEXT,
-                    fact_id_per_doc INTEGER,
-                    specific_fact_cited TEXT,
-                    relevance_reason TEXT,
-                    contestability_reason TEXT
-                );
-                
-                CREATE TABLE IF NOT EXISTS procedural_rules (
-                    id SERIAL PRIMARY KEY,
-                    doc_name TEXT,
-                    procedural_rule TEXT,
-                    effects TEXT
-                );
-
-                CREATE TABLE IF NOT EXISTS substantive_rules (
-                    id SERIAL PRIMARY KEY,
-                    doc_name TEXT,
-                    substantive_law TEXT,
-                    applicability TEXT,
-                    relevance TEXT
+                    chunk_type TEXT, -- 'facts', 'procedural_rules', or 'substantive_rules'
+                    content TEXT,
+                    embedding vector(3072),
+                    metadata JSONB
                 );
             """
             )
             conn.commit()
 
 
-def insert_to_database(
-    doc_name: str,
-    facts: list[CitedFact],
-    procedural_rules: list[CitedProceduralRule],
-    substantive_rules: list[CitedSubstantiveRule],
-) -> None:
+def prepare_chunks(doc_name: str, extracted: ExtractedFactsAndRules) -> list[Document]:
+    return [
+        Document(
+            page_content=json.dumps(extracted["facts"], indent=2),
+            metadata={"doc_name": doc_name, "type": "facts"},
+        ),
+        Document(
+            page_content=json.dumps(extracted["procedural_rules"], indent=2),
+            metadata={"doc_name": doc_name, "type": "procedural_rules"},
+        ),
+        Document(
+            page_content=json.dumps(extracted["substantive_rules"], indent=2),
+            metadata={"doc_name": doc_name, "type": "substantive_rules"},
+        ),
+    ]
+
+
+def store_chunks(chunks: list[Document], embeddings: OpenAIEmbeddings) -> None:
     with connect_to_db() as conn:
         with conn.cursor() as cur:
-            # Clear any existing records for this document
-            cur.execute("DELETE FROM facts WHERE doc_name = %s", (doc_name,))
-            cur.execute("DELETE FROM procedural_rules WHERE doc_name = %s", (doc_name,))
-            cur.execute(
-                "DELETE FROM substantive_rules WHERE doc_name = %s", (doc_name,)
-            )
-
-            # Insert facts
-            for fact in facts:
+            for chunk in chunks:
+                content = chunk.page_content
+                metadata = chunk.metadata
+                embedding = embeddings.embed_query(content)
                 cur.execute(
                     """
-                    INSERT INTO facts (
-                        doc_name, 
-                        fact_id_per_doc, 
-                        specific_fact_cited,
-                        relevance_reason, 
-                        contestability_reason
-                    ) VALUES (%s, %s, %s, %s, %s)
+                    INSERT INTO facts_and_rules (doc_name, chunk_type, content, embedding, metadata)
+                    VALUES (%s, %s, %s, %s, %s)
                     """,
                     (
-                        doc_name,
-                        fact["id"],
-                        fact["specific_fact_cited"],
-                        fact["relevance_reason"],
-                        fact["contestability_reason"],
+                        metadata["doc_name"],
+                        metadata["type"],
+                        content,
+                        embedding,
+                        json.dumps(metadata),
                     ),
                 )
-
-            # Insert procedural rules
-            for rule in procedural_rules:
-                cur.execute(
-                    """
-                    INSERT INTO procedural_rules (
-                        doc_name, procedural_rule,
-                        effects
-                    ) VALUES (%s, %s, %s)
-                    """,
-                    (
-                        doc_name,
-                        rule["procedural_rule"],
-                        rule["effects"],
-                    ),
-                )
-
-            # Insert substantive rules
-            for rule in substantive_rules:
-                cur.execute(
-                    """
-                    INSERT INTO substantive_rules (
-                        doc_name, substantive_law,
-                        applicability,
-                        relevance
-                    ) VALUES (%s, %s, %s, %s)
-                    """,
-                    (
-                        doc_name,
-                        rule["substantive_law"],
-                        rule["applicability"],
-                        rule["relevance"],
-                    ),
-                )
-
         conn.commit()
 
 
 def main():
-    # Add the base directory where the PDFs are stored
+    initialize_vector_schema()
+    embeddings = OpenAIEmbeddings(
+        model="text-embedding-3-large", api_key=os.getenv("OPENAI_API_KEY")
+    )
+
     base_dir = os.path.join(os.path.dirname(__file__), "../data")
-
-    # Initialize the schema
-    initialize_schema()
-
-    # Select which years will be uploaded/updated
     start_year, end_year = 2025, 2025
-    years = [str(year) for year in range(start_year, end_year + 1)]
+    years = [str(y) for y in range(start_year, end_year + 1)]
 
     for year in years:
-        input_pdf_folder = f"{base_dir}/{year}"
-        pdf_files_list = glob.glob(os.path.join(input_pdf_folder, "*.pdf"))
+        pdf_dir = os.path.join(base_dir, year)
+        pdf_files = glob.glob(os.path.join(pdf_dir, "*.pdf"))
 
-        for doc_path in tqdm(pdf_files_list, desc="Processing PDFs"):
+        for doc_path in tqdm(pdf_files, desc=f"Processing PDFs for {year}"):
             try:
                 doc_name = os.path.splitext(os.path.basename(doc_path))[0]
-                facts_and_rules = extract_facts_and_rules(doc_path)
-                insert_to_database(
-                    doc_name=doc_name,
-                    facts=facts_and_rules["facts"],
-                    procedural_rules=facts_and_rules["procedural_rules"],
-                    substantive_rules=facts_and_rules["substantive_rules"],
-                )
+                extracted = extract_facts_and_rules(doc_path)
+                chunks = prepare_chunks(doc_name, extracted)
+                store_chunks(chunks, embeddings)
             except Exception as e:
                 print(f"Error processing {doc_path}: {e}")
 
